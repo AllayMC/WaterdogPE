@@ -18,7 +18,9 @@ package dev.waterdog.waterdogpe.network.protocol;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.ToString;
-import org.allaymc.protocol.extension.v766.Bedrock_v766_NetEase;
+import org.allaymc.protocol.extension.codec.v630.Bedrock_v630_NetEase;
+import org.allaymc.protocol.extension.codec.v686.Bedrock_v686_NetEase;
+import org.allaymc.protocol.extension.codec.v766.Bedrock_v766_NetEase;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
 import org.cloudburstmc.protocol.bedrock.codec.v313.Bedrock_v313;
 import org.cloudburstmc.protocol.bedrock.codec.v332.Bedrock_v332;
@@ -118,12 +120,12 @@ public enum ProtocolVersion {
     MINECRAFT_PE_1_20_10(594, Bedrock_v594.CODEC),
     MINECRAFT_PE_1_20_30(618, Bedrock_v618.CODEC),
     MINECRAFT_PE_1_20_40(622, Bedrock_v622.CODEC),
-    MINECRAFT_PE_1_20_50(630, Bedrock_v630.CODEC),
+    MINECRAFT_PE_1_20_50(630, Bedrock_v630.CODEC, Bedrock_v630_NetEase.CODEC),
     MINECRAFT_PE_1_20_60(649, Bedrock_v649.CODEC),
     MINECRAFT_PE_1_20_70(662, Bedrock_v662.CODEC),
     MINECRAFT_PE_1_20_80(671, Bedrock_v671.CODEC),
     MINECRAFT_PE_1_21_0(685, Bedrock_v685.CODEC),
-    MINECRAFT_PE_1_21_2(686, Bedrock_v686.CODEC),
+    MINECRAFT_PE_1_21_2(686, Bedrock_v686.CODEC, Bedrock_v686_NetEase.CODEC),
     MINECRAFT_PE_1_21_20(712, Bedrock_v712.CODEC),
     MINECRAFT_PE_1_21_30(729, Bedrock_v729.CODEC),
     MINECRAFT_PE_1_21_40(748, Bedrock_v748.CODEC),
