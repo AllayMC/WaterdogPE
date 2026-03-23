@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class ProxiedBedrockPeer extends BedrockPeer {
     private BedrockServerSession firstSession;
+    @Getter
     private CompressionStrategy compressionStrategy;
     private ProtocolVersion version = ProtocolVersion.oldest();
     @Getter
@@ -219,10 +220,6 @@ public class ProxiedBedrockPeer extends BedrockPeer {
         return this.channel.config().getOption(RakChannelOption.RAK_PROTOCOL_VERSION);
     }
 
-    public CompressionStrategy getCompressionStrategy() {
-        return this.compressionStrategy;
-    }
-
     public boolean isSplitScreen() {
         return this.sessions.size() > 1;
     }
@@ -235,7 +232,7 @@ public class ProxiedBedrockPeer extends BedrockPeer {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
             if (msg instanceof BedrockBatchWrapper) {
                 this.onBedrockBatch((BedrockBatchWrapper) msg);
@@ -251,7 +248,7 @@ public class ProxiedBedrockPeer extends BedrockPeer {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         log.error("{} Exception caught in bedrock connection", ctx.channel().remoteAddress(), cause);
         this.disconnect("Internal error");
     }
