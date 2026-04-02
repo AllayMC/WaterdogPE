@@ -153,7 +153,7 @@ tasks {
 }
 
 configure<MavenPublishBaseExtension> {
-    publishToMavenCentral(automaticRelease = true)
+    publishToMavenCentral()
     signAllPublications()
 
     coordinates(project.group.toString(), "waterdogpe", project.version.toString())
