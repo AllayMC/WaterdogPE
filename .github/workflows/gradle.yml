@@ -1,0 +1,65 @@
+name: Gradle
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+          cache-overwrite-existing: true
+
+      - name: Read build flags
+        id: vars
+        run: |
+          echo "is_dev_build=$(grep '^waterdog.is-dev-build=' gradle.properties | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+          echo "jar_path=build/libs/Waterdog.jar" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew build
+
+      - name: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: waterdogpe
+          path: ${{ steps.vars.outputs.jar_path }}
+
+      - name: Publish to Maven Central
+        if: success() && github.event_name == 'push' && github.repository == 'AllayMC/WaterdogPE' && github.ref_name == 'master'
+        run: ./gradlew publishToMavenCentral
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SONATYPE_SECRET_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SONATYPE_SECRET_KEY_PASSWORD }}
+
+      - name: Publish Nightly Release
+        if: success() && github.event_name == 'push' && github.repository == 'AllayMC/WaterdogPE' && github.ref_name == 'master' && steps.vars.outputs.is_dev_build == 'true'
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: nightly
+          prerelease: true
+          title: Nightly Build
+          files: ${{ steps.vars.outputs.jar_path }}

@@ -56,7 +56,7 @@ public class WaterdogPE {
             return;
         }
 
-        if (versionInfo.buildVersion().equals("#build") || versionInfo.branchName().equals("unknown")) {
+        if (versionInfo.branchName().equals("unknown") || versionInfo.commitId().equals("unknown")) {
             logger.warning("Custom build? Unofficial builds should be not run in production!");
         } else {
             logger.info("§3Discovered branch §b{}§3 commitId §b{}", versionInfo.branchName(), versionInfo.commitId());
@@ -102,10 +102,16 @@ public class WaterdogPE {
             return VersionInfo.unknown();
         }
 
+        String baseVersion = properties.getProperty("git.build.base_version",
+                properties.getProperty("git.build.version", "unknown"));
+        String buildVersion = properties.getProperty("git.build.version", baseVersion);
         String branchName = properties.getProperty("git.branch", "unknown");
         String commitId = properties.getProperty("git.commit.id.abbrev", "unknown");
-        boolean debug = branchName.equals("release") ? false : VersionInfo.DEFAULT_DEBUG;
-        return new VersionInfo(branchName, commitId, debug);
+        boolean debug = Boolean.parseBoolean(properties.getProperty(
+                "git.build.is_dev_build",
+                Boolean.toString(VersionInfo.DEFAULT_DEBUG)
+        ));
+        return new VersionInfo(baseVersion, buildVersion, branchName, commitId, debug);
     }
 
     public static void setLoggerLevel(Level level) {

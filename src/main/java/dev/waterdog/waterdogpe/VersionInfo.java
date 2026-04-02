@@ -22,8 +22,8 @@ public class VersionInfo {
 
     public static final boolean DEFAULT_DEBUG = true;
 
-    private final String baseVersion = "2.0.4";
-    private final String buildVersion = "#build";
+    private final String baseVersion;
+    private final String buildVersion;
     private final String author = "WaterdogTEAM";
     private final int metricsId = 15678;
     private final int latestProtocolVersion;
@@ -32,7 +32,9 @@ public class VersionInfo {
     private final String commitId;
     private boolean debug;
 
-    public VersionInfo(String branchName, String commitId, boolean debug) {
+    public VersionInfo(String baseVersion, String buildVersion, String branchName, String commitId, boolean debug) {
+        this.baseVersion = baseVersion;
+        this.buildVersion = buildVersion;
         this.branchName = branchName;
         this.commitId = commitId;
         this.debug = debug;
@@ -40,7 +42,7 @@ public class VersionInfo {
     }
 
     public static VersionInfo unknown() {
-        return new VersionInfo("unknown", "unknown", DEFAULT_DEBUG);
+        return new VersionInfo("unknown", "unknown", "unknown", "unknown", DEFAULT_DEBUG);
     }
 
     public String baseVersion() {
