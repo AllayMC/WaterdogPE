@@ -139,6 +139,14 @@ tasks {
         exclude("META-INF/thirdparty-LICENSE")
     }
 
+    named<JavaExec>("run") {
+        enabled = false
+    }
+
+    named<JavaExec>("runShadow") {
+        workingDir = file(".run")
+    }
+
     named("build") {
         dependsOn("shadowJar")
     }
