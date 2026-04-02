@@ -32,7 +32,7 @@ import dev.waterdog.waterdogpe.player.ProxiedPlayer;
 import dev.waterdog.waterdogpe.network.protocol.Signals;
 import dev.waterdog.waterdogpe.utils.types.TranslationContainer;
 import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
-import org.cloudburstmc.protocol.common.PacketSignal;
+import org.cloudburstmc.protocol.bedrock.packet.PacketSignal;
 
 import javax.crypto.SecretKey;
 import java.net.URI;

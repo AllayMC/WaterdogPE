@@ -24,7 +24,7 @@ import dev.waterdog.waterdogpe.event.defaults.ResourcePacksRebuildEvent;
 import dev.waterdog.waterdogpe.packs.types.ResourcePack;
 import dev.waterdog.waterdogpe.packs.types.ZipResourcePack;
 import dev.waterdog.waterdogpe.utils.FileUtils;
-import org.cloudburstmc.protocol.common.util.Preconditions;
+import org.cloudburstmc.protocol.bedrock.util.Preconditions;
 
 import java.io.File;
 import java.io.IOException;
@@ -168,7 +168,7 @@ public class PackManager {
 
         for (ResourcePack pack : this.packs.values()) {
             ResourcePacksInfoPacket.Entry infoEntry = new ResourcePacksInfoPacket.Entry(pack.getPackId(), pack.getVersion().toString(),
-                    pack.getPackSize(), pack.getContentKey(), "", pack.getContentKey().isEmpty() ? "" : pack.getPackId().toString(), false, false, false, null);
+                    pack.getPackSize(), pack.getContentKey(), "", pack.getPackId().toString(), false, false, null, false);
             ResourcePackStackPacket.Entry stackEntry = new ResourcePackStackPacket.Entry(pack.getPackId().toString(), pack.getVersion().toString(), "");
             if (pack.getType().equals(ResourcePack.TYPE_RESOURCES)) {
                 this.packsInfoPacket.getResourcePackInfos().add(infoEntry);

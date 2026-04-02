@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <raklib.version>1.0.0.CR3-SNAPSHOT</raklib.version>
-        <protocol.version>1.26.10-R1</protocol.version>
+        <protocol.version>1.26.10-R2</protocol.version>
         <log4j2.version>2.25.3</log4j2.version>
         <jline.version>3.30.6</jline.version>
         <netty.version>4.1.101.Final</netty.version>
@@ -176,11 +176,6 @@
             <version>${protocol.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.allaymc</groupId>
-            <artifactId>protocol-extension</artifactId>
-            <version>0.2.2</version>
-        </dependency>
-        <dependency>
             <groupId>org.cloudburstmc.netty</groupId>
             <artifactId>netty-transport-raknet</artifactId>
             <version>${raklib.version}</version>
@@ -225,7 +220,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.15.0</version>
                 <configuration>
                     <source>21</source>
                     <target>21</target>

@@ -19,7 +19,7 @@ import org.cloudburstmc.protocol.bedrock.packet.*;
 import dev.waterdog.waterdogpe.event.defaults.PlayerResourcePackApplyEvent;
 import dev.waterdog.waterdogpe.packs.PackManager;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
-import org.cloudburstmc.protocol.common.PacketSignal;
+import org.cloudburstmc.protocol.bedrock.packet.PacketSignal;
 
 import java.util.LinkedList;
 import java.util.Queue;
