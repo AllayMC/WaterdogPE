@@ -23,6 +23,7 @@ only_allow_netease_client: false
 | v630             | 1.20.50      |
 | v686             | 1.21.2       |
 | v766             | 1.21.50      |
+| v819             | 1.21.93      |
 
 > **Note:** When `netease_client_support` is enabled, all RakNet v8 clients will be treated as NetEase clients.
 
