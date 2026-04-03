@@ -60,6 +60,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           automatic_release_tag: nightly
-          prerelease: true
           title: Nightly Build
           files: ${{ steps.vars.outputs.jar_path }}
