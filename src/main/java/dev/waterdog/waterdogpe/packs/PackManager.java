@@ -15,109 +15,121 @@
 
 package dev.waterdog.waterdogpe.packs;
 
-import io.netty.buffer.Unpooled;
-import lombok.Getter;
-import org.cloudburstmc.protocol.bedrock.data.ResourcePackType;
-import org.cloudburstmc.protocol.bedrock.packet.*;
 import dev.waterdog.waterdogpe.ProxyServer;
 import dev.waterdog.waterdogpe.event.defaults.ResourcePacksRebuildEvent;
+import dev.waterdog.waterdogpe.packs.sync.PackMetadata;
+import dev.waterdog.waterdogpe.packs.sync.PackSnapshot;
 import dev.waterdog.waterdogpe.packs.types.ResourcePack;
 import dev.waterdog.waterdogpe.packs.types.ZipResourcePack;
 import dev.waterdog.waterdogpe.utils.FileUtils;
+import io.netty.buffer.Unpooled;
+import lombok.Getter;
+import org.cloudburstmc.protocol.bedrock.data.ResourcePackType;
+import org.cloudburstmc.protocol.bedrock.packet.ResourcePackChunkDataPacket;
+import org.cloudburstmc.protocol.bedrock.packet.ResourcePackChunkRequestPacket;
+import org.cloudburstmc.protocol.bedrock.packet.ResourcePackDataInfoPacket;
+import org.cloudburstmc.protocol.bedrock.packet.ResourcePackStackPacket;
+import org.cloudburstmc.protocol.bedrock.packet.ResourcePacksInfoPacket;
 import org.cloudburstmc.protocol.bedrock.util.Preconditions;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class PackManager {
 
-    private static final long CHUNK_SIZE = 102400;
-
+    private static final int CHUNK_SIZE = 102400;
     private static final PathMatcher ZIP_PACK_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.{zip,mcpack}");
-    private static final ResourcePackStackPacket.Entry EDU_PACK = new ResourcePackStackPacket.Entry("0fba4063-dba1-4281-9b89-ff9390653530", "1.0.0", "");
 
     private final ProxyServer proxy;
-    @Getter
-    private final Map<UUID, ResourcePack> packs = new HashMap<>();
-    @Getter
-    private final Map<String, ResourcePack> packsByIdVer = new HashMap<>();
+    private final Map<UUID, ResourcePack> localPacks = new LinkedHashMap<>();
+    private final Map<UUID, PackMetadata> localPackMetadata = new LinkedHashMap<>();
 
     @Getter
-    private final ResourcePacksInfoPacket packsInfoPacket = new ResourcePacksInfoPacket();
-    @Getter
-    private final ResourcePackStackPacket stackPacket = new ResourcePackStackPacket();
+    private volatile PackSnapshot currentSnapshot;
 
     public PackManager(ProxyServer proxy) {
         this.proxy = proxy;
+        this.currentSnapshot = PackSnapshot.create(
+                List.of(),
+                List.of(),
+                Map.of(),
+                this.proxy.getConfiguration().isForceServerPacks(),
+                this.proxy.getConfiguration().isOverwriteClientPacks(),
+                this.proxy.getConfiguration().enableEducationFeatures()
+        );
     }
 
-    public void loadPacks(Path packsDirectory) {
+    public static int getDefaultChunkSize() {
+        return CHUNK_SIZE;
+    }
+
+    public synchronized void loadPacks(Path packsDirectory) {
         Preconditions.checkNotNull(packsDirectory, "Packs directory can not be null!");
         Preconditions.checkArgument(Files.isDirectory(packsDirectory), packsDirectory + " must be directory!");
         this.proxy.getLogger().info("Loading resource packs!");
 
-        try {
-            DirectoryStream<Path> stream = Files.newDirectoryStream(packsDirectory);
+        this.localPacks.clear();
+        this.localPackMetadata.clear();
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(packsDirectory)) {
             for (Path path : stream) {
                 ResourcePack resourcePack = this.constructPack(path);
-                if (resourcePack != null) {
-                    String packIdVer = resourcePack.getPackId() + "_" + resourcePack.getPackManifest().getHeader().getVersion();
-                    this.packsByIdVer.put(packIdVer, resourcePack);
-                    this.packs.put(resourcePack.getPackId(), resourcePack);
+                if (resourcePack == null) {
+                    continue;
                 }
+
+                this.localPacks.put(resourcePack.getPackId(), resourcePack);
+                this.localPackMetadata.put(resourcePack.getPackId(), PackMetadata.fromPack(resourcePack));
             }
         } catch (IOException e) {
             this.proxy.getLogger().error("Can not load packs!", e);
         }
 
-        this.rebuildPackets();
-        this.proxy.getLogger().info("Loaded " + this.packs.size() + " packs!");
+        this.publishLocalSnapshot();
+        this.proxy.getLogger().info("Loaded " + this.localPacks.size() + " packs!");
     }
 
-    private ResourcePack constructPack(Path packPath) {
+    public synchronized ResourcePack loadPack(Path packPath) {
         Class<? extends ResourcePack> loader = this.getPackLoader(packPath);
         if (loader == null) {
             return null;
         }
 
         try {
-            ResourcePack pack = this.loadPack(packPath, loader);
-            if (pack != null) {
-                return pack;
+            ResourcePack pack = loader.getDeclaredConstructor(Path.class).newInstance(packPath);
+            if (!pack.loadManifest() || !pack.getPackManifest().validate()) {
+                return null;
             }
+
+            File contentKeyFile = new File(packPath.getParent().toFile(), packPath.toFile().getName() + ".key");
+            pack.setContentKey(contentKeyFile.exists()
+                    ? Files.readString(contentKeyFile.toPath(), StandardCharsets.UTF_8).replace("\n", "")
+                    : "");
+
+            if (this.proxy.getConfiguration().getPackCacheSize() >= (pack.getPackSize() / FileUtils.INT_MEGABYTE)) {
+                pack.saveToCache();
+            }
+            return pack;
+        } catch (Exception exception) {
+            this.proxy.getLogger().error("Can not load resource pack from: " + packPath.getFileName(), exception);
+            return null;
+        }
+    }
+
+    private ResourcePack constructPack(Path packPath) {
+        ResourcePack pack = this.loadPack(packPath);
+        if (pack != null) {
+            return pack;
+        }
+        if (this.getPackLoader(packPath) != null) {
             this.proxy.getLogger().error("Resource pack manifest.json is invalid or was not found in " + packPath.getFileName() + ", please make sure that you zip the content of the pack and not the folder! Read more on troubleshooting here: https://docs.waterdog.dev/books/waterdogpe-setup/page/troubleshooting");
-        } catch (Exception e) {
-            this.proxy.getLogger().error("Can not load resource pack from: " + packPath.getFileName(), e);
         }
         return null;
     }
 
-    private ResourcePack loadPack(Path packPath, Class<? extends ResourcePack> clazz) throws Exception {
-        ResourcePack pack = clazz.getDeclaredConstructor(Path.class).newInstance(packPath);
-        if (!pack.loadManifest() || !pack.getPackManifest().validate()) {
-            return null;
-        }
-
-        File contentKeyFile = new File(packPath.getParent().toFile(), packPath.toFile().getName() + ".key");
-        pack.setContentKey(contentKeyFile.exists() ? Files.readString(contentKeyFile.toPath(), StandardCharsets.UTF_8).replace("\n", "") : "");
-
-        if (this.proxy.getConfiguration().getPackCacheSize() >= (pack.getPackSize() / FileUtils.INT_MEGABYTE)) {
-            pack.saveToCache();
-        }
-        return pack;
-    }
-
-    /**
-     * We are currently supporting only zipped resource packs
-     *
-     * @param path to resource pack.
-     * @return class which will be used to load pack.
-     */
     public Class<? extends ResourcePack> getPackLoader(Path path) {
         if (ZIP_PACK_MATCHER.matches(path)) {
             return ZipResourcePack.class;
@@ -125,69 +137,55 @@ public class PackManager {
         return null;
     }
 
-    public boolean registerPack(ResourcePack resourcePack) {
+    public synchronized boolean registerPack(ResourcePack resourcePack) {
         Preconditions.checkNotNull(resourcePack, "Resource pack can not be null!");
         Preconditions.checkArgument(resourcePack.getPackManifest().validate(), "Resource pack has invalid manifest!");
 
-        if (this.packs.get(resourcePack.getPackId()) != null) {
+        if (this.localPacks.get(resourcePack.getPackId()) != null) {
             return false;
         }
 
-        String packIdVer = resourcePack.getPackId() + "_" + resourcePack.getVersion();
-        this.packsByIdVer.put(packIdVer, resourcePack);
-        this.packs.put(resourcePack.getPackId(), resourcePack);
-        this.rebuildPackets();
+        this.localPacks.put(resourcePack.getPackId(), resourcePack);
+        this.localPackMetadata.put(resourcePack.getPackId(), PackMetadata.fromPack(resourcePack));
+        this.publishAfterLocalUpdate();
         return true;
     }
 
-    public boolean unregisterPack(UUID packId) {
-        ResourcePack resourcePack = this.packs.remove(packId);
+    public synchronized boolean unregisterPack(UUID packId) {
+        ResourcePack resourcePack = this.localPacks.remove(packId);
         if (resourcePack == null) {
             return false;
         }
 
-        String packIdVer = resourcePack.getPackId() + "_" + resourcePack.getVersion();
-        this.packsByIdVer.remove(packIdVer);
-        this.rebuildPackets();
+        this.localPackMetadata.remove(packId);
+        this.publishAfterLocalUpdate();
         return true;
     }
 
-    public void rebuildPackets() {
-        this.packsInfoPacket.setForcedToAccept(this.proxy.getConfiguration().isForceServerPacks());
-        this.packsInfoPacket.setWorldTemplateId(UUID.randomUUID());
-        this.packsInfoPacket.setWorldTemplateVersion("");
-        this.stackPacket.setForcedToAccept(this.proxy.getConfiguration().isOverwriteClientPacks());
-
-        this.packsInfoPacket.getBehaviorPackInfos().clear();
-        this.packsInfoPacket.getResourcePackInfos().clear();
-
-        this.stackPacket.getBehaviorPacks().clear();
-        this.stackPacket.getResourcePacks().clear();
-
-        this.stackPacket.setGameVersion("");
-
-        for (ResourcePack pack : this.packs.values()) {
-            ResourcePacksInfoPacket.Entry infoEntry = new ResourcePacksInfoPacket.Entry(pack.getPackId(), pack.getVersion().toString(),
-                    pack.getPackSize(), pack.getContentKey(), "", pack.getPackId().toString(), false, false, null, false);
-            ResourcePackStackPacket.Entry stackEntry = new ResourcePackStackPacket.Entry(pack.getPackId().toString(), pack.getVersion().toString(), "");
-            if (pack.getType().equals(ResourcePack.TYPE_RESOURCES)) {
-                this.packsInfoPacket.getResourcePackInfos().add(infoEntry);
-                this.stackPacket.getResourcePacks().add(stackEntry);
-            } else if (pack.getType().equals(ResourcePack.TYPE_DATA)) {
-                this.packsInfoPacket.getBehaviorPackInfos().add(infoEntry);
-                this.stackPacket.getBehaviorPacks().add(stackEntry);
-            }
-        }
-
-        if (this.proxy.getConfiguration().enableEducationFeatures()) {
-            this.stackPacket.getBehaviorPacks().add(EDU_PACK);
-        }
-        ResourcePacksRebuildEvent event = new ResourcePacksRebuildEvent(this.packsInfoPacket, this.stackPacket);
+    public synchronized void publishSnapshot(PackSnapshot snapshot) {
+        this.currentSnapshot = snapshot;
+        ResourcePacksRebuildEvent event = new ResourcePacksRebuildEvent(snapshot.getPacksInfoPacket(), snapshot.getStackPacket());
         this.proxy.getEventManager().callEvent(event);
     }
 
+    public Map<UUID, ResourcePack> getLocalPacks() {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(this.localPacks));
+    }
+
+    public Map<UUID, PackMetadata> getLocalPackMetadata() {
+        return Collections.unmodifiableMap(new LinkedHashMap<>(this.localPackMetadata));
+    }
+
+    public ResourcePacksInfoPacket getPacksInfoPacket() {
+        return this.currentSnapshot.getPacksInfoPacket();
+    }
+
+    public ResourcePackStackPacket getStackPacket() {
+        return this.currentSnapshot.getStackPacket();
+    }
+
     public ResourcePackDataInfoPacket packInfoFromIdVer(String idVersion) {
-        ResourcePack resourcePack = this.packsByIdVer.get(idVersion);
+        ResourcePack resourcePack = this.currentSnapshot.packFromIdVersion(idVersion);
         if (resourcePack == null) {
             return null;
         }
@@ -208,7 +206,7 @@ public class PackManager {
     }
 
     public ResourcePackChunkDataPacket packChunkDataPacket(String idVersion, ResourcePackChunkRequestPacket from) {
-        ResourcePack resourcePack = this.packsByIdVer.get(idVersion);
+        ResourcePack resourcePack = this.currentSnapshot.packFromIdVersion(idVersion);
         if (resourcePack == null) {
             return null;
         }
@@ -217,9 +215,27 @@ public class PackManager {
         packet.setPackId(from.getPackId());
         packet.setPackVersion(from.getPackVersion());
         packet.setChunkIndex(from.getChunkIndex());
-        packet.setData(Unpooled.wrappedBuffer(resourcePack.getChunk((int) CHUNK_SIZE * from.getChunkIndex(), (int) CHUNK_SIZE)));
-        packet.setProgress(CHUNK_SIZE * from.getChunkIndex());
+        packet.setData(Unpooled.wrappedBuffer(resourcePack.getChunk(CHUNK_SIZE * from.getChunkIndex(), CHUNK_SIZE)));
+        packet.setProgress((long) CHUNK_SIZE * from.getChunkIndex());
         return packet;
     }
 
+    private void publishLocalSnapshot() {
+        this.publishSnapshot(PackSnapshot.create(
+                this.localPacks.values(),
+                this.localPackMetadata.values(),
+                Map.of(),
+                this.proxy.getConfiguration().isForceServerPacks(),
+                this.proxy.getConfiguration().isOverwriteClientPacks(),
+                this.proxy.getConfiguration().enableEducationFeatures()
+        ));
+    }
+
+    private void publishAfterLocalUpdate() {
+        if (this.proxy.getPackSyncManager() != null && this.proxy.getPackSyncManager().isEnabled()) {
+            this.proxy.getPackSyncManager().refreshAsync();
+            return;
+        }
+        this.publishLocalSnapshot();
+    }
 }

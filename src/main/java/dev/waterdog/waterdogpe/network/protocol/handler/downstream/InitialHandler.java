@@ -82,6 +82,16 @@ public class InitialHandler extends AbstractDownstreamHandler {
         if (!this.player.getProxy().getConfiguration().enableResourcePacks() || !this.player.acceptResourcePacks()) {
             return PacketSignal.UNHANDLED;
         }
+
+        if (this.player.getProxy().getPackSyncManager().isEnabled()) {
+            var snapshot = this.player.getAssignedPackSnapshot();
+            if (snapshot == null || !snapshot.coversInfoPacket(packet)) {
+                this.connection.disconnect();
+                this.player.disconnect("Downstream server advertised resource packs outside the assigned proxy snapshot.");
+                return Signals.CANCEL;
+            }
+        }
+
         ResourcePackClientResponsePacket response = new ResourcePackClientResponsePacket();
         response.setStatus(ResourcePackClientResponsePacket.Status.HAVE_ALL_PACKS);
         this.connection.sendPacket(response);
@@ -93,6 +103,16 @@ public class InitialHandler extends AbstractDownstreamHandler {
         if (!this.player.getProxy().getConfiguration().enableResourcePacks() || !this.player.acceptResourcePacks()) {
             return PacketSignal.UNHANDLED;
         }
+
+        if (this.player.getProxy().getPackSyncManager().isEnabled()) {
+            var snapshot = this.player.getAssignedPackSnapshot();
+            if (snapshot == null || !snapshot.coversStackPacket(packet)) {
+                this.connection.disconnect();
+                this.player.disconnect("Downstream server requested resource packs outside the assigned proxy snapshot.");
+                return Signals.CANCEL;
+            }
+        }
+
         ResourcePackClientResponsePacket response = new ResourcePackClientResponsePacket();
         response.setStatus(ResourcePackClientResponsePacket.Status.COMPLETED);
         this.connection.sendPacket(response);

@@ -39,6 +39,7 @@ import dev.waterdog.waterdogpe.network.protocol.updaters.CodecUpdaterCommands;
 import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
 import dev.waterdog.waterdogpe.network.serverinfo.ServerInfoMap;
 import dev.waterdog.waterdogpe.packs.PackManager;
+import dev.waterdog.waterdogpe.packs.sync.PackSyncManager;
 import dev.waterdog.waterdogpe.player.PlayerManager;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
 import dev.waterdog.waterdogpe.plugin.PluginManager;
@@ -100,6 +101,8 @@ public class ProxyServer {
     private final EventManager eventManager;
     @Getter
     private final PackManager packManager;
+    @Getter
+    private final PackSyncManager packSyncManager;
 
     @Getter
     private final ServerInfoMap serverInfoMap = new ServerInfoMap();
@@ -215,6 +218,7 @@ public class ProxyServer {
         this.playerManager = new PlayerManager(this);
         this.eventManager = new EventManager(this);
         this.packManager = new PackManager(this);
+        this.packSyncManager = new PackSyncManager(this);
         this.securityManager = new SecurityManager(this);
         this.commandSender = new ConsoleCommandSender(this);
         this.commandMap = new DefaultCommandMap(this, SimpleCommandMap.DEFAULT_PREFIX);
@@ -255,6 +259,7 @@ public class ProxyServer {
 
         if (this.getConfiguration().enableResourcePacks()) {
             this.packManager.loadPacks(this.packsPath);
+            this.packSyncManager.initialize();
         }
 
         InetSocketAddress bindAddress = this.getConfiguration().getBindAddress();
@@ -366,6 +371,7 @@ public class ProxyServer {
         this.console.getConsoleThread().interrupt();
         this.tickExecutor.shutdown();
         this.scheduler.shutdown();
+        this.packSyncManager.shutdown();
         this.eventManager.getThreadedExecutor().shutdown();
 
         if (Metrics.get() != null) {

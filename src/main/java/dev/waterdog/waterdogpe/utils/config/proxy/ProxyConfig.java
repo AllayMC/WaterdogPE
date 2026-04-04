@@ -80,6 +80,10 @@ public class ProxyConfig extends YamlConfig {
     @Comment("Connection and security related settings. Do NOT edit unless you know what you are doing!")
     private NetworkSettings networkSettings = new NetworkSettings();
 
+    @Path("pack_sync")
+    @Comment("Settings for automatic resource pack synchronization from Allay backends")
+    private PackSyncSettings packSyncSettings = new PackSyncSettings();
+
     @Path("permissions")
     @Comment("Case-Sensitive permission list for players (empty using {})")
     private Object2ObjectOpenHashMap<String, List<String>> playerPermissions = new Object2ObjectOpenHashMap<>() {{

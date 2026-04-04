@@ -75,6 +75,15 @@ public class SwitchDownstreamHandler extends AbstractDownstreamHandler {
 
     @Override
     public final PacketSignal handle(ResourcePacksInfoPacket packet) {
+        if (this.player.getProxy().getPackSyncManager().isEnabled()) {
+            var snapshot = this.player.getAssignedPackSnapshot();
+            if (snapshot == null || !snapshot.coversInfoPacket(packet)) {
+                this.connection.disconnect();
+                this.player.sendMessage("Transfer blocked: downstream server advertised packs outside the current login snapshot.");
+                return Signals.CANCEL;
+            }
+        }
+
         ResourcePackClientResponsePacket response = new ResourcePackClientResponsePacket();
         response.setStatus(ResourcePackClientResponsePacket.Status.HAVE_ALL_PACKS);
         this.connection.sendPacket(response);
@@ -83,6 +92,15 @@ public class SwitchDownstreamHandler extends AbstractDownstreamHandler {
 
     @Override
     public final PacketSignal handle(ResourcePackStackPacket packet) {
+        if (this.player.getProxy().getPackSyncManager().isEnabled()) {
+            var snapshot = this.player.getAssignedPackSnapshot();
+            if (snapshot == null || !snapshot.coversStackPacket(packet)) {
+                this.connection.disconnect();
+                this.player.sendMessage("Transfer blocked: downstream server requested packs outside the current login snapshot.");
+                return Signals.CANCEL;
+            }
+        }
+
         ResourcePackClientResponsePacket response = new ResourcePackClientResponsePacket();
         response.setStatus(ResourcePackClientResponsePacket.Status.COMPLETED);
         this.connection.sendPacket(response);

@@ -35,6 +35,7 @@ import dev.waterdog.waterdogpe.network.protocol.rewrite.types.RewriteData;
 import dev.waterdog.waterdogpe.network.protocol.user.LoginData;
 import dev.waterdog.waterdogpe.network.protocol.user.Platform;
 import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
+import dev.waterdog.waterdogpe.packs.sync.PackSnapshot;
 import dev.waterdog.waterdogpe.utils.types.Permission;
 import dev.waterdog.waterdogpe.utils.types.TextContainer;
 import dev.waterdog.waterdogpe.utils.types.TranslationContainer;
@@ -94,6 +95,8 @@ public class ProxiedPlayer implements CommandSender {
     private final Collection<ServerInfo> pendingServers = ObjectCollections.synchronize(new ObjectArrayList<>());
     private ClientConnection clientConnection;
     private ClientConnection pendingConnection;
+    @Getter
+    private volatile PackSnapshot assignedPackSnapshot;
 
 
     /**
@@ -184,7 +187,15 @@ public class ProxiedPlayer implements CommandSender {
     }
 
     private void sendResourcePacks() {
-        ResourcePacksInfoPacket packet = this.proxy.getPackManager().getPacksInfoPacket();
+        this.assignedPackSnapshot = this.proxy.getPackManager().getCurrentSnapshot();
+        if (this.proxy.getPackSyncManager().isEnabled() && this.assignedPackSnapshot == null) {
+            this.disconnect("Proxy resource pack snapshot is not ready yet");
+            return;
+        }
+
+        ResourcePacksInfoPacket packet = this.assignedPackSnapshot == null
+                ? this.proxy.getPackManager().getPacksInfoPacket()
+                : this.assignedPackSnapshot.getPacksInfoPacket();
         PlayerResourcePackInfoSendEvent event = new PlayerResourcePackInfoSendEvent(this, packet);
         this.proxy.getEventManager().callEvent(event);
         if (event.isCancelled()) {
@@ -249,6 +260,14 @@ public class ProxiedPlayer implements CommandSender {
         if (this.pendingServers.contains(targetServer)) {
             this.sendMessage(new TranslationContainer("waterdog.downstream.connecting", targetServer.getServerName()));
             return;
+        }
+
+        if (this.proxy.getPackSyncManager().isEnabled()) {
+            PackSnapshot snapshot = this.assignedPackSnapshot;
+            if (snapshot == null || !snapshot.coversServer(targetServer.getServerName())) {
+                this.sendMessage("Transfer blocked: target server requires resource packs outside the current login snapshot.");
+                return;
+            }
         }
 
         this.pendingServers.add(targetServer);

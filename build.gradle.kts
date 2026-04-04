@@ -50,6 +50,8 @@ repositories {
 dependencies {
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
+    testCompileOnly("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
 
     implementation("com.bugsnag:bugsnag:[3.0,4.0)")
     implementation("org.bstats:bstats-base:3.0.1")
@@ -79,6 +81,9 @@ dependencies {
     implementation("io.netty:netty-transport-native-epoll:$nettyVersion:linux-x86_64")
     implementation("io.netty:netty-transport-native-kqueue:$nettyVersion:osx-x86_64")
     implementation("com.nimbusds:nimbus-jose-jwt:9.37.4")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.12.2")
+    testImplementation("org.mockito:mockito-core:5.17.0")
 }
 
 gitProperties {
@@ -95,6 +100,10 @@ tasks {
     withType<JavaCompile>().configureEach {
         options.encoding = "UTF-8"
         options.release.set(21)
+    }
+
+    withType<Test>().configureEach {
+        useJUnitPlatform()
     }
 
     withType<Javadoc>().configureEach {

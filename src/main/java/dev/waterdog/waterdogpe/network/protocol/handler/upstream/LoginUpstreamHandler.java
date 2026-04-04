@@ -239,6 +239,11 @@ public class LoginUpstreamHandler implements BedrockPacketHandler {
     }
 
     private void finishConnection() {
+        if (this.proxy.getPackSyncManager().isEnabled() && !this.proxy.getPackSyncManager().isReadyForLogins()) {
+            this.player.disconnect("Proxy resource pack sync is still initializing. Reconnect in a few seconds.");
+            return;
+        }
+
         PlayStatusPacket status = new PlayStatusPacket();
         status.setStatus(PlayStatusPacket.Status.LOGIN_SUCCESS);
         this.session.sendPacket(status);

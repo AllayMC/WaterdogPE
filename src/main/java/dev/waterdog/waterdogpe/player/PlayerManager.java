@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Base Player Manager, managing the registration, binding and removal of instances of ProxiedPlayer.
  */
 public class PlayerManager {
+    private static final String FULL_PERMISSION_TOKEN = "*";
 
     private final ProxyServer proxy;
 
@@ -51,15 +52,29 @@ public class PlayerManager {
     }
 
     public void subscribePermissions(ProxiedPlayer player) {
-        this.proxy.getConfiguration().getDefaultPermissions().forEach(perm -> player.addPermission(new Permission(perm, true)));
+        boolean admin = false;
+        for (String permission : this.proxy.getConfiguration().getDefaultPermissions()) {
+            if (FULL_PERMISSION_TOKEN.equals(permission)) {
+                admin = true;
+                continue;
+            }
+            player.addPermission(new Permission(permission, true));
+        }
+
         List<String> permissions = this.proxy.getConfiguration().getPlayerPermissions().get(player.getName());
         if (permissions == null) {
+            player.setAdmin(admin);
             return;
         }
 
         for (String perm : permissions) {
+            if (FULL_PERMISSION_TOKEN.equals(perm)) {
+                admin = true;
+                continue;
+            }
             player.addPermission(new Permission(perm, true));
         }
+        player.setAdmin(admin);
     }
 
     public void removePlayer(ProxiedPlayer player) {

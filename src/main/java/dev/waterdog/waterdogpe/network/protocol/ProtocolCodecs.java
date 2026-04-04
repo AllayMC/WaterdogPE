@@ -19,12 +19,16 @@ import dev.waterdog.waterdogpe.network.protocol.updaters.CodecUpdater419;
 import dev.waterdog.waterdogpe.network.protocol.updaters.ProtocolCodecUpdater;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
+import org.cloudburstmc.protocol.bedrock.codec.netease.serializer.PyRpcSerializer;
+import org.cloudburstmc.protocol.bedrock.data.PacketRecipient;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProtocolCodecs {
+
+    private static final int PY_RPC_PACKET_ID = 200;
     
     private static final List<Class<? extends BedrockPacket>> HANDLED_PACKETS = new ArrayList<>();
     static {
@@ -119,6 +123,7 @@ public class ProtocolCodecs {
         HANDLED_PACKETS.add(PlayerUpdateEntityOverridesPacket.class);
         HANDLED_PACKETS.add(PlayerLocationPacket.class);
         HANDLED_PACKETS.add(CameraPresetsPacket.class);
+        HANDLED_PACKETS.add(PyRpcPacket.class);
     }
 
     private static final List<ProtocolCodecUpdater> UPDATERS = new ObjectArrayList<>();
@@ -143,6 +148,9 @@ public class ProtocolCodecs {
             if (baseCodec.getProtocolVersion() >= updater.getRequiredVersion()) {
                 updater.updateCodec(builder, baseCodec);
             }
+        }
+        if (baseCodec.getPacketDefinition(PyRpcPacket.class) == null) {
+            builder.registerPacket(PyRpcPacket::new, PyRpcSerializer.INSTANCE, PY_RPC_PACKET_ID, PacketRecipient.BOTH);
         }
         return builder.build();
     }
