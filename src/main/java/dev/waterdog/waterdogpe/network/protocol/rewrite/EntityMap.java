@@ -21,6 +21,7 @@ import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataMap;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataType;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData;
+import org.cloudburstmc.protocol.bedrock.data.primitiveshape.*;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.types.RewriteData;
 import dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils;
@@ -372,6 +373,68 @@ public class EntityMap implements BedrockPacketHandler {
             signal = mergeSignals(signal, returnedSignal);
         }
         return signal;
+    }
+
+    @Override
+    public PacketSignal handle(PrimitiveShapesPacket packet) {
+        PacketSignal signal = PacketSignal.UNHANDLED;
+        ListIterator<PrimitiveShape> iterator = packet.getShapes().listIterator();
+        while (iterator.hasNext()) {
+            PrimitiveShape shape = iterator.next();
+            Long attachedEntityId = shape.getAttachedToEntityId();
+            if (attachedEntityId != null) {
+                long rewrittenId = PlayerRewriteUtils.rewriteId(attachedEntityId, this.rewrite.getEntityId(), this.rewrite.getOriginalEntityId());
+                if (rewrittenId != attachedEntityId) {
+                    iterator.set(withAttachedEntityId(shape, rewrittenId));
+                    signal = PacketSignal.HANDLED;
+                }
+            }
+        }
+        return signal;
+    }
+
+    private static PrimitiveShape withAttachedEntityId(PrimitiveShape shape, Long attachedEntityId) {
+        return switch (shape) {
+            case PrimitiveLine line -> new PrimitiveLine(line.getId(), line.getDimension(), line.getPosition(),
+                    line.getScale(), line.getRotation(), line.getTotalTimeLeft(), line.getColor(),
+                    line.getMaximumRenderDistance(), line.getLineEndPosition(), attachedEntityId);
+            case PrimitiveBox box -> new PrimitiveBox(box.getId(), box.getDimension(), box.getPosition(),
+                    box.getScale(), box.getRotation(), box.getTotalTimeLeft(), box.getColor(),
+                    box.getMaximumRenderDistance(), box.getBoxBounds(), attachedEntityId);
+            case PrimitiveSphere sphere -> new PrimitiveSphere(sphere.getId(), sphere.getDimension(),
+                    sphere.getPosition(), sphere.getScale(), sphere.getRotation(), sphere.getTotalTimeLeft(),
+                    sphere.getColor(), sphere.getMaximumRenderDistance(), sphere.getSegments(), attachedEntityId);
+            case PrimitiveCircle circle -> new PrimitiveCircle(circle.getId(), circle.getDimension(),
+                    circle.getPosition(), circle.getScale(), circle.getRotation(), circle.getTotalTimeLeft(),
+                    circle.getColor(), circle.getMaximumRenderDistance(), circle.getSegments(), attachedEntityId);
+            case PrimitiveText text -> new PrimitiveText(text.getId(), text.getDimension(), text.getPosition(),
+                    text.getScale(), text.getRotation(), text.getTotalTimeLeft(), text.getColor(), text.getText(),
+                    text.isUseRotation(), text.getBackgroundColor(), text.isDepthTest(), text.isShowBackface(),
+                    text.isShowTextBackface(), text.getMaximumRenderDistance(), attachedEntityId);
+            case PrimitiveArrow arrow -> new PrimitiveArrow(arrow.getId(), arrow.getDimension(), arrow.getPosition(),
+                    arrow.getScale(), arrow.getRotation(), arrow.getTotalTimeLeft(), arrow.getColor(),
+                    arrow.getMaximumRenderDistance(), arrow.getArrowEndPosition(), arrow.getArrowHeadLength(),
+                    arrow.getArrowHeadRadius(), arrow.getArrowHeadSegments(), attachedEntityId);
+            case PrimitiveCylinder cylinder -> new PrimitiveCylinder(cylinder.getId(), cylinder.getDimension(),
+                    cylinder.getPosition(), cylinder.getScale(), cylinder.getRotation(), cylinder.getTotalTimeLeft(),
+                    cylinder.getColor(), cylinder.getMaximumRenderDistance(), cylinder.getHeight(),
+                    cylinder.getSegments(), cylinder.getRadiusX(), cylinder.getRadiusZ(), attachedEntityId);
+            case PrimitivePyramid pyramid -> new PrimitivePyramid(pyramid.getId(), pyramid.getDimension(),
+                    pyramid.getPosition(), pyramid.getScale(), pyramid.getRotation(), pyramid.getTotalTimeLeft(),
+                    pyramid.getColor(), pyramid.getMaximumRenderDistance(), pyramid.getHeight(), pyramid.getWidth(),
+                    pyramid.getDepth(), attachedEntityId);
+            case PrimitiveEllipsoid ellipsoid -> new PrimitiveEllipsoid(ellipsoid.getId(), ellipsoid.getDimension(),
+                    ellipsoid.getPosition(), ellipsoid.getScale(), ellipsoid.getRotation(),
+                    ellipsoid.getTotalTimeLeft(), ellipsoid.getColor(), ellipsoid.getMaximumRenderDistance(),
+                    ellipsoid.getSegments(), ellipsoid.getRadii(), attachedEntityId);
+            case PrimitiveCone cone -> new PrimitiveCone(cone.getId(), cone.getDimension(), cone.getPosition(),
+                    cone.getScale(), cone.getRotation(), cone.getTotalTimeLeft(), cone.getColor(),
+                    cone.getMaximumRenderDistance(), cone.getHeight(), cone.getSegments(), cone.getRadii(),
+                    attachedEntityId);
+            default -> new PrimitiveShape(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    attachedEntityId);
+        };
     }
 
     private PacketSignal rewriteMetadata(EntityDataMap metadata) {

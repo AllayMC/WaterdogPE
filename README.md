@@ -16,6 +16,10 @@ netease_client_support: true
 only_allow_netease_client: false
 ```
 
+## Supported Bedrock Protocol Versions
+
+The latest supported Bedrock version is **1.26.30** (`v1001`). This includes the new `1.26.20` (`v975`) and `1.26.30` (`v1001`) protocol updates.
+
 ### Supported NetEase Protocol Versions
 
 | Protocol Version | Game Version |

@@ -120,11 +120,6 @@ public class ProxyConfig extends YamlConfig {
     @Comment("If enabled, the proxy will pass information like XUID or IP to the downstream server using custom fields in the LoginPacket")
     private boolean useLoginExtras = false;
 
-    @Path("use_certificate_payload")
-    @Accessors(fluent = true)
-    @Comment("If enabled, the proxy will always send Certificate payload in the LoginPacket")
-    private boolean useCertificatePayload = true;
-
     @Path("replace_username_spaces")
     @Comment("Replaces username spaces with underscores if enabled")
     private boolean replaceUsernameSpaces = false;
@@ -195,7 +190,7 @@ public class ProxyConfig extends YamlConfig {
 
     @Path("netease_client_support")
     @Comments({
-            "Enable support for NetEase (China) Minecraft clients. Only protocol v766 (1.21.50) is supported.",
+            "Enable support for NetEase (China) Minecraft clients. Supported protocols: v630, v686, v766, v819.",
             "Warning: Enabling this will treat all RakNet v8 clients as NetEase clients"
     })
     private boolean neteaseClientSupport = false;

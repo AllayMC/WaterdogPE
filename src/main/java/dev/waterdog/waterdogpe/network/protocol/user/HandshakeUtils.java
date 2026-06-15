@@ -33,6 +33,7 @@ import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.cloudburstmc.protocol.bedrock.BedrockSession;
 import org.cloudburstmc.protocol.bedrock.data.auth.CertificateChainPayload;
+import org.cloudburstmc.protocol.bedrock.data.auth.TokenPayload;
 import org.cloudburstmc.protocol.bedrock.packet.LoginPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ServerToClientHandshakePacket;
 import org.cloudburstmc.protocol.bedrock.util.ChainValidationResult;
@@ -71,6 +72,14 @@ public class HandshakeUtils {
         }
     }
 
+    public static JsonObject createChainExtraData(String displayName, String xuid, UUID uuid) {
+        JsonObject extraData = new JsonObject();
+        extraData.addProperty("displayName", displayName);
+        extraData.addProperty("XUID", xuid);
+        extraData.addProperty("identity", uuid.toString());
+        return extraData;
+    }
+
     public static SignedJWT createClientDataChain(KeyPair pair, JsonObject extraData) {
         String publicKeyBase64 = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
         long timestamp = System.currentTimeMillis() / 1000;
@@ -87,17 +96,21 @@ public class HandshakeUtils {
         return encodeJWT(pair, dataChain);
     }
 
-    public static SignedJWT createClientDataToken(KeyPair pair, String displayName, String xuid) {
+    public static SignedJWT createClientDataToken(KeyPair pair, String displayName, String xuid, UUID uuid, String minecraftId) {
         String publicKeyBase64 = Base64.getEncoder().encodeToString(pair.getPublic().getEncoded());
         long timestamp = System.currentTimeMillis() / 1000;
 
         JsonObject dataChain = new JsonObject();
-        dataChain.addProperty("iat", timestamp);
-        dataChain.addProperty("exp", timestamp + 24 * 3600);
-        dataChain.addProperty("iss", "self");
         dataChain.addProperty("cpk", publicKeyBase64);
-        dataChain.addProperty("xid", xuid);
+        dataChain.addProperty("leguuid", uuid.toString());
+        dataChain.addProperty("iat", timestamp);
         dataChain.addProperty("xname", displayName);
+        dataChain.addProperty("exp", timestamp + 24 * 3600);
+        dataChain.addProperty("mid", minecraftId);
+        dataChain.addProperty("ap", 7);
+        dataChain.addProperty("iss", "self");
+        dataChain.addProperty("aud", "api://auth-minecraft-services/multiplayer");
+        dataChain.addProperty("xid", xuid);
         return encodeJWT(pair, dataChain);
     }
 
@@ -140,6 +153,7 @@ public class HandshakeUtils {
         String xuid = identityData.xuid;
         //UUID uuid = UUID.nameUUIDFromBytes(("pocket-auth-1-xuid:" + xuid).getBytes(StandardCharsets.UTF_8));
         UUID uuid = identityData.identity;
+        String minecraftId = identityData.minecraftId;
 
         SignedJWT clientDataJwt = SignedJWT.parse(packet.getClientJwt());
         JsonObject clientData = HandshakeUtils.parseClientData(clientDataJwt, xuid, session);
@@ -166,8 +180,12 @@ public class HandshakeUtils {
             netEaseData = extractNetEaseData(result.rawIdentityClaims());
         }
 
-        return new HandshakeEntry(identityPublicKey, clientData, xuid, uuid, displayName, xboxAuth, protocol,
-                packet.getAuthPayload() instanceof CertificateChainPayload, neteaseClient, netEaseData);
+        boolean shouldSendCertificateChain = packet.getAuthPayload() instanceof CertificateChainPayload ||
+                protocol.isBefore(ProtocolVersion.MINECRAFT_PE_1_26_20) ||
+                (neteaseClient && !(packet.getAuthPayload() instanceof TokenPayload));
+
+        return new HandshakeEntry(identityPublicKey, clientData, xuid, uuid, displayName, minecraftId, xboxAuth, protocol,
+                shouldSendCertificateChain, neteaseClient, netEaseData);
     }
 
     @SuppressWarnings("unchecked")
@@ -218,11 +236,4 @@ public class HandshakeUtils {
         });
     }
 
-    public static JsonObject createChainExtraData(String displayName, String xuid, UUID uuid) {
-        JsonObject extraData = new JsonObject();
-        extraData.addProperty("displayName", displayName);
-        extraData.addProperty("XUID", xuid);
-        extraData.addProperty("identity", uuid.toString());
-        return extraData;
-    }
 }
