@@ -90,6 +90,9 @@
   - Added `IncompatibleProtocolEvent` so plugins can adjust the login failure status and disconnect message for unsupported client protocols.
   - Wired the event into `LoginUpstreamHandler#checkVersion`, adapting the event's `CharSequence` message to this fork's `BedrockServerSession#disconnect(String)` API.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Allow closing packs: https://github.com/WaterdogPE/WaterdogPE/commit/4695b161a9e1f19d4b0771272a11e9b3be386b2b
+✅ Allow closing packs: https://github.com/WaterdogPE/WaterdogPE/commit/4695b161a9e1f19d4b0771272a11e9b3be386b2b
+  - Added `ResourcePack#close()` and `ZipResourcePack` cleanup of the underlying `ZipFile`.
+  - Added `PackManager#clear()` and close-on-unregister behavior so loaded pack files can be released before reload/removal.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Add ProxyServer#reloadPackManager: https://github.com/WaterdogPE/WaterdogPE/commit/eaf1a9079d2ab1e78baad4189cf7483fdbb9226b
 Improve pack sending (#413): https://github.com/WaterdogPE/WaterdogPE/commit/b3ab8f2e463897e6220720a183a187d75ec01649

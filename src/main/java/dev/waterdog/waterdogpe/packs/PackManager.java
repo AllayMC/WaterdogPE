@@ -56,6 +56,17 @@ public class PackManager {
         this.proxy = proxy;
     }
 
+    public void clear() {
+        for (ResourcePack pack : this.packs.values()) {
+            try {
+                pack.close();
+            } catch (IOException ignored) {
+            }
+        }
+        this.packs.clear();
+        this.packsByIdVer.clear();
+    }
+
     public void loadPacks(Path packsDirectory) {
         Preconditions.checkNotNull(packsDirectory, "Packs directory can not be null!");
         Preconditions.checkArgument(Files.isDirectory(packsDirectory), packsDirectory + " must be directory!");
@@ -144,6 +155,10 @@ public class PackManager {
         ResourcePack resourcePack = this.packs.remove(packId);
         if (resourcePack == null) {
             return false;
+        }
+        try {
+            resourcePack.close();
+        } catch (IOException ignored) {
         }
 
         String packIdVer = resourcePack.getPackId() + "_" + resourcePack.getVersion();
