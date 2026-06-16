@@ -27,7 +27,9 @@
   - Adapted upstream debug drawer entity-id rewrite to this fork's current Protocol API by rewriting `PrimitiveShapesPacket` shape attachments while preserving immutable shape subtype fields.
   - Bumped this fork's Protocol dependency to `1.26.30-R1` per local Protocol fork requirement; v1001 is not enabled until the later #411 sync entry.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Disable plugin when exceptions occur during enable (#398): https://github.com/WaterdogPE/WaterdogPE/commit/87d7a5f9340e48a474989ff3727f756a735eb6a7
+✅ Disable plugin when exceptions occur during enable (#398): https://github.com/WaterdogPE/WaterdogPE/commit/87d7a5f9340e48a474989ff3727f756a735eb6a7
+  - Accepted upstream plugin lifecycle fix so enable failures attempt to disable the plugin and clear partial enabled state.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Send CertificateChain on <1.26.20, populate full TokenPayload otherwise (#400): https://github.com/WaterdogPE/WaterdogPE/commit/1047082407625172c7382fdc6b2c7ffd51a23846
 Implement network interface system with registration and booting capabilities (#401): https://github.com/WaterdogPE/WaterdogPE/commit/6e6d5f669fdfedb0953d1eaa6ef5d23a3f8ed553
 Expose rewrite API for plugins (#402): https://github.com/WaterdogPE/WaterdogPE/commit/c0be4bda9a5e895248d152d9d8ff54d0f0270a70
