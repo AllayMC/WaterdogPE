@@ -42,7 +42,10 @@
   - Added public `RewriteData#rewriteEntityId(long, LongConsumer)` for plugin-facing entity ID rewrite access.
   - Kept this fork's current `PrimitiveShapesPacket` rewrite adaptation instead of upstream's `DebugDrawerPacket` API name.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Bump io.netty:netty-transport-native-epoll (#405): https://github.com/WaterdogPE/WaterdogPE/commit/01b9dc424e3474dd013f2dc3b49ac76206e5bf82
+✅ Bump io.netty:netty-transport-native-epoll (#405): https://github.com/WaterdogPE/WaterdogPE/commit/01b9dc424e3474dd013f2dc3b49ac76206e5bf82
+  - Ported upstream Maven `netty.version` update to this fork's Gradle `nettyVersion` (`4.1.135.Final`).
+  - The Gradle build shares this version for epoll and kqueue, so kqueue is also aligned by this change.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Bump io.netty:netty-transport-native-kqueue (#404): https://github.com/WaterdogPE/WaterdogPE/commit/681b6f6f3d7a1f8f38b6a87c55da274e651fb1fb
 Prevent queueing packets after channel is closed: https://github.com/WaterdogPE/WaterdogPE/commit/07fe2557d6e5d17cfc0e0ea660c6b413f6001d68
 Store uniqueId from add entity packets: https://github.com/WaterdogPE/WaterdogPE/commit/1e0502717dbc6d52a7a9e8fec467f61ef9fb7939
