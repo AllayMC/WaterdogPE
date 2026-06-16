@@ -14,6 +14,7 @@
  */
 
 package dev.waterdog.waterdogpe.network.protocol.rewrite;
+import org.cloudburstmc.protocol.bedrock.data.HudVisibility;
 import org.cloudburstmc.protocol.bedrock.data.ScoreInfo;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData;
 import org.cloudburstmc.protocol.bedrock.packet.*;
@@ -69,6 +70,53 @@ public class EntityTracker implements BedrockPacketHandler {
     @Override
     public PacketSignal handle(RemoveEntityPacket packet) {
         this.player.getEntities().remove(packet.getUniqueEntityId());
+        this.player.getEntityLinks().remove(packet.getUniqueEntityId());
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(AddVolumeEntityPacket packet) {
+        this.player.getVolumeEntities().put(packet.getId(), packet.getDimension());
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(RemoveVolumeEntityPacket packet) {
+        this.player.getVolumeEntities().remove(packet.getId());
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(PlayerFogPacket packet) {
+        this.player.setFogApplied(!packet.getFogStack().isEmpty());
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(UpdateClientInputLocksPacket packet) {
+        this.player.setInputLockData(packet.getLockComponentData());
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(SetHudPacket packet) {
+        if (packet.getVisibility() == HudVisibility.HIDE) {
+            this.player.getHiddenHudElements().addAll(packet.getElements());
+        } else {
+            this.player.getHiddenHudElements().removeAll(packet.getElements());
+        }
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(ContainerOpenPacket packet) {
+        this.player.getOpenContainers().put(packet.getId(), packet.getType());
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(ContainerClosePacket packet) {
+        this.player.getOpenContainers().remove(packet.getId());
         return PacketSignal.UNHANDLED;
     }
 

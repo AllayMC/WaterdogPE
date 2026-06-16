@@ -58,7 +58,10 @@
   - Accepted upstream `EntityTracker` fix so tracked entity cleanup stores unique entity IDs from add packets instead of runtime IDs.
   - This matches `RemoveEntityPacket` and the transfer cleanup path, which removes entities by unique ID.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Track and reset more states on transfer: https://github.com/WaterdogPE/WaterdogPE/commit/b1d0899ca16a15987a3e2a8bb24fe3d14e2dc02d
+✅ Track and reset more states on transfer: https://github.com/WaterdogPE/WaterdogPE/commit/b1d0899ca16a15987a3e2a8bb24fe3d14e2dc02d
+  - Accepted upstream tracking/reset coverage for volume entities, fog, input locks, hidden HUD elements, open containers, time, and default game mode resolution during server transfer.
+  - Adapted the change to this fork's current Protocol API while preserving the NetEase transfer BiomeDefinitionListPacket guard and leaving the later PlayerLoginEvent timeout change for its own sync entry.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Limit the max pending query sessions: https://github.com/WaterdogPE/WaterdogPE/commit/0223c77bf5ef23760baea6d8bb45f6c9ab883966
 Add timeout to PlayerLoginEvent so it doesn't hang forever: https://github.com/WaterdogPE/WaterdogPE/commit/c4baee25bce1b8435d3d5be743194abea954657e
 Force disable client side generation: https://github.com/WaterdogPE/WaterdogPE/commit/2a38fbc638e99a0e5a243aa6fc5324502dfd92d6

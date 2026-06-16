@@ -38,13 +38,16 @@ import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
 import dev.waterdog.waterdogpe.utils.types.Permission;
 import dev.waterdog.waterdogpe.utils.types.TextContainer;
 import dev.waterdog.waterdogpe.utils.types.TranslationContainer;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.cloudburstmc.protocol.bedrock.data.HudElement;
 import org.cloudburstmc.protocol.bedrock.data.ScoreInfo;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandOriginData;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandOriginType;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ContainerType;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.cloudburstmc.protocol.bedrock.util.Preconditions;
 
@@ -90,6 +93,18 @@ public class ProxiedPlayer implements CommandSender {
     private final Long2LongMap entityLinks = Long2LongMaps.synchronize(new Long2LongOpenHashMap());
     @Getter
     private final LongSet chunkBlobs = LongSets.synchronize(new LongOpenHashSet());
+    @Getter
+    private final Int2IntMap volumeEntities = Int2IntMaps.synchronize(new Int2IntOpenHashMap());
+    @Getter
+    private final ObjectSet<HudElement> hiddenHudElements = ObjectSets.synchronize(new ObjectOpenHashSet<>());
+    @Getter
+    @Setter
+    private volatile boolean fogApplied;
+    @Getter
+    @Setter
+    private volatile int inputLockData;
+    @Getter
+    private final Int2ObjectMap<ContainerType> openContainers = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
     private final Object2ObjectMap<String, Permission> permissions = new Object2ObjectOpenHashMap<>();
     private final Collection<ServerInfo> pendingServers = ObjectCollections.synchronize(new ObjectArrayList<>());
     private ClientConnection clientConnection;

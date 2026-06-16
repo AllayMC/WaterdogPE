@@ -18,10 +18,15 @@ package dev.waterdog.waterdogpe.network.protocol.handler.downstream;
 import com.nimbusds.jwt.SignedJWT;
 import dev.waterdog.waterdogpe.network.connection.client.ClientConnection;
 import dev.waterdog.waterdogpe.network.protocol.handler.TransferCallback;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import lombok.extern.log4j.Log4j2;
 import org.cloudburstmc.math.vector.Vector3f;
+import org.cloudburstmc.protocol.bedrock.data.GameType;
+import org.cloudburstmc.protocol.bedrock.data.HudElement;
 import org.cloudburstmc.protocol.bedrock.data.ScoreInfo;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ContainerType;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import dev.waterdog.waterdogpe.event.defaults.ServerTransferEvent;
 import dev.waterdog.waterdogpe.network.protocol.ProtocolVersion;
@@ -41,6 +46,7 @@ import java.net.URI;
 import java.security.interfaces.ECPublicKey;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 import static dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils.*;
@@ -187,12 +193,45 @@ public class SwitchDownstreamHandler extends AbstractDownstreamHandler {
         }
         scoreboards.clear();
 
+        Int2IntMap volumeEntities = this.player.getVolumeEntities();
+        for (Int2IntMap.Entry entry : volumeEntities.int2IntEntrySet()) {
+            injectRemoveVolumeEntity(this.player.getConnection(), entry.getIntKey(), entry.getIntValue());
+        }
+        volumeEntities.clear();
+
+        if (this.player.isFogApplied()) {
+            injectClearFog(this.player.getConnection());
+            this.player.setFogApplied(false);
+        }
+
+        if (this.player.getInputLockData() != 0) {
+            injectInputLocks(this.player.getConnection(), 0, rewriteData.getSpawnPosition());
+            this.player.setInputLockData(0);
+        }
+
+        Set<HudElement> hiddenHudElements = this.player.getHiddenHudElements();
+        if (!hiddenHudElements.isEmpty()) {
+            injectResetHud(this.player.getConnection(), hiddenHudElements);
+            hiddenHudElements.clear();
+        }
+
+        Int2ObjectMap<ContainerType> openContainers = this.player.getOpenContainers();
+        for (Int2ObjectMap.Entry<ContainerType> entry : openContainers.int2ObjectEntrySet()) {
+            injectCloseContainer(this.player.getConnection(), (byte) entry.getIntKey(), entry.getValue());
+        }
+        openContainers.clear();
+
         injectRemoveAllEffects(this.player.getConnection(), rewriteData.getEntityId(), this.player.getProtocol());
         injectClearWeather(this.player.getConnection());
 
-        injectGameMode(this.player.getConnection(), packet.getPlayerGameType());
+        GameType gameType = packet.getPlayerGameType();
+        if (gameType == GameType.DEFAULT) {
+            gameType = packet.getLevelGameType();
+        }
+        injectGameMode(this.player.getConnection(), gameType);
         injectSetDifficulty(this.player.getConnection(), packet.getDifficulty());
         injectGameRules(this.player.getConnection(), packet.getGamerules());
+        injectTime(this.player.getConnection(), packet.getDayCycleStopTime());
 
         this.connection.sendPacket(this.player.getLoginData().getChunkRadius());
 

@@ -98,6 +98,16 @@ public class ConnectedUpstreamHandler extends AbstractUpstreamHandler implements
     }
 
     @Override
+    public PacketSignal handle(ContainerClosePacket packet) {
+        if (packet.getId() == -1) {
+            this.player.getOpenContainers().clear();
+        } else {
+            this.player.getOpenContainers().remove(packet.getId());
+        }
+        return PacketSignal.UNHANDLED;
+    }
+
+    @Override
     public boolean isForceEncode() {
         return false;
     }
