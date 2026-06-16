@@ -18,7 +18,10 @@
   - Accepted upstream defensive check in `finishConnection()` so a premature `ClientToServerHandshakePacket` disconnects with `Wrong login flow` instead of dereferencing a missing player.
   - Preserved fork-specific NetEase client detection, codec selection, and handshake processing.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-A couple small improvements: https://github.com/WaterdogPE/WaterdogPE/commit/203e08b7e4985e2664c3d7f095dd7a1c39cb1d20
+✅ A couple small improvements: https://github.com/WaterdogPE/WaterdogPE/commit/203e08b7e4985e2664c3d7f095dd7a1c39cb1d20
+  - Accepted upstream server error handling, connection-error timeout blocking, throttle map max size, and updated network defaults/comments.
+  - Adapted `ProxiedBedrockPeer` constructor wiring while preserving fork-specific NetEase client state, packet codec selection, and initial compression behavior.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Added 1.26.20 (v975) support (#397): https://github.com/WaterdogPE/WaterdogPE/commit/7b9fce1341200342434a9f48cb9d3c8a39d063a7
 Disable plugin when exceptions occur during enable (#398): https://github.com/WaterdogPE/WaterdogPE/commit/87d7a5f9340e48a474989ff3727f756a735eb6a7
 Send CertificateChain on <1.26.20, populate full TokenPayload otherwise (#400): https://github.com/WaterdogPE/WaterdogPE/commit/1047082407625172c7382fdc6b2c7ffd51a23846
