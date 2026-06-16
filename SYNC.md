@@ -97,4 +97,7 @@
 ✅ Add ProxyServer#reloadPackManager: https://github.com/WaterdogPE/WaterdogPE/commit/eaf1a9079d2ab1e78baad4189cf7483fdbb9226b
   - Added `ProxyServer#reloadPackManager()` to clear loaded packs and reload the configured packs directory.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Improve pack sending (#413): https://github.com/WaterdogPE/WaterdogPE/commit/b3ab8f2e463897e6220720a183a187d75ec01649
+✅ Improve pack sending (#413): https://github.com/WaterdogPE/WaterdogPE/commit/b3ab8f2e463897e6220720a183a187d75ec01649
+  - Accepted upstream resource pack chunk send throttling: chunk requests are queued and drained by a repeating scheduler task instead of being sent in bursts.
+  - Tracks sent chunk indexes to advance to the next pack only after the current pack's chunks have been sent, and cancels the send task on completion/disconnect/error.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
