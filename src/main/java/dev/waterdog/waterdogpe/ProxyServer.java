@@ -20,13 +20,15 @@ import dev.waterdog.waterdogpe.command.utils.CommandUtils;
 import dev.waterdog.waterdogpe.console.TerminalConsole;
 import dev.waterdog.waterdogpe.event.EventManager;
 import dev.waterdog.waterdogpe.event.defaults.DispatchCommandEvent;
+import dev.waterdog.waterdogpe.event.defaults.NetworkRegisterEvent;
 import dev.waterdog.waterdogpe.event.defaults.ProxyStartEvent;
 import dev.waterdog.waterdogpe.logger.MainLogger;
 import dev.waterdog.waterdogpe.network.EventLoops;
+import dev.waterdog.waterdogpe.network.NetworkInterface;
 import dev.waterdog.waterdogpe.network.NetworkMetrics;
+import dev.waterdog.waterdogpe.network.NetworkStartupException;
+import dev.waterdog.waterdogpe.network.RakNetInterface;
 import dev.waterdog.waterdogpe.network.connection.codec.compression.CompressionType;
-import dev.waterdog.waterdogpe.network.connection.codec.initializer.OfflineServerChannelInitializer;
-import dev.waterdog.waterdogpe.network.connection.codec.initializer.ProxiedServerSessionInitializer;
 import dev.waterdog.waterdogpe.network.connection.codec.initializer.ProxiedSessionInitializer;
 import dev.waterdog.waterdogpe.network.connection.codec.query.QueryHandler;
 import dev.waterdog.waterdogpe.network.connection.handler.DefaultForcedHostHandler;
@@ -53,19 +55,11 @@ import dev.waterdog.waterdogpe.utils.config.proxy.ProxyConfig;
 import dev.waterdog.waterdogpe.utils.reporting.ErrorReporting;
 import dev.waterdog.waterdogpe.utils.types.TextContainer;
 import dev.waterdog.waterdogpe.utils.types.TranslationContainer;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.unix.UnixChannelOption;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.Getter;
 import lombok.Setter;
 import net.cubespace.Yamler.Config.InvalidConfigurationException;
-import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
-import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
-import org.cloudburstmc.netty.channel.raknet.config.RakServerCookieMode;
 import org.cloudburstmc.protocol.bedrock.util.Preconditions;
 
 import java.net.InetSocketAddress;
@@ -104,8 +98,7 @@ public class ProxyServer {
     @Getter
     private final ServerInfoMap serverInfoMap = new ServerInfoMap();
 
-    private final long serverId;
-    private final List<Channel> serverChannels = new ObjectArrayList<>();
+    private final List<NetworkInterface> interfaces = new ObjectArrayList<>();
 
     @Getter
     private QueryHandler queryHandler;
@@ -130,6 +123,7 @@ public class ProxyServer {
     private IForcedHostHandler forcedHostHandler;
     @Getter
     private NetworkMetrics networkMetrics;
+    @Getter
     private final EventLoopGroup bossEventLoopGroup;
     @Getter
     private final EventLoopGroup workerEventLoopGroup;
@@ -219,7 +213,6 @@ public class ProxyServer {
         this.commandSender = new ConsoleCommandSender(this);
         this.commandMap = new DefaultCommandMap(this, SimpleCommandMap.DEFAULT_PREFIX);
         this.console = new TerminalConsole(this);
-        this.serverId = ThreadLocalRandom.current().nextLong();
 
         this.pluginManager.loadAllPlugins();
         this.configurationManager.loadServerInfos(this.serverInfoMap);
@@ -265,10 +258,22 @@ public class ProxyServer {
             this.queryHandler = new QueryHandler(this);
         }
 
-        this.bindChannels(bindAddress);
+        this.registerInterface(new RakNetInterface(this));
+
+        try {
+            this.bootNetworks(bindAddress);
+        } catch (NetworkStartupException e) {
+            this.logger.error("Failed to bind to primary address {}, shutting down", bindAddress, e);
+            this.shutdown();
+            return;
+        }
         for (Integer port : this.getConfiguration().getAdditionalPorts()) {
             InetSocketAddress additionalBind = new InetSocketAddress(bindAddress.getHostString(), port);
-            this.bindChannels(additionalBind);
+            try {
+                this.bootNetworks(additionalBind);
+            } catch (NetworkStartupException e) {
+                this.getLogger().error("Unable to bind to additional port {}, skipping", additionalBind, e);
+            }
         }
 
         ProxyStartEvent event = new ProxyStartEvent(this);
@@ -287,49 +292,44 @@ public class ProxyServer {
         this.tickFuture = this.tickExecutor.scheduleAtFixedRate(this::tickProcessor, 50, 50, TimeUnit.MILLISECONDS);
     }
 
-    private void bindChannels(InetSocketAddress address) {
-        boolean allowEpoll = Epoll.isAvailable();
-        int bindCount = allowEpoll && EventLoops.getChannelType() != EventLoops.ChannelType.NIO
-                ? Runtime.getRuntime().availableProcessors() : 1;
-
-        for (int i = 0; i < bindCount; i++) {
-            ServerBootstrap bootstrap = new ServerBootstrap()
-                    .channelFactory(RakChannelFactory.server(EventLoops.getChannelType().getDatagramChannel()))
-                    .group(this.bossEventLoopGroup, this.workerEventLoopGroup)
-                    // .option(CustomChannelOption.IP_DONT_FRAG, 2 /* IP_PMTUDISC_DO */)
-                    .option(RakChannelOption.RAK_GUID, this.serverId)
-                    .option(RakChannelOption.RAK_HANDLE_PING, true)
-                    .option(RakChannelOption.RAK_MAX_MTU, this.getNetworkSettings().getMaximumMtu())
-                    .option(RakChannelOption.RAK_SERVER_COOKIE_MODE, this.getNetworkSettings().enableCookies() ?
-                            RakServerCookieMode.ACTIVE : RakServerCookieMode.INVALID)
-                    .childOption(RakChannelOption.RAK_SESSION_TIMEOUT, 10000L)
-                    .childOption(RakChannelOption.RAK_ORDERING_CHANNELS, 1)
-                    .handler(new OfflineServerChannelInitializer(this))
-                    .childHandler(new ProxiedServerSessionInitializer(this));
-            if (allowEpoll) {
-                bootstrap.option(UnixChannelOption.SO_REUSEPORT, true);
-            }
-            ChannelFuture future = bootstrap
-                    .bind(address)
-                    .syncUninterruptibly();
-            if (future.isSuccess()) {
-                this.serverChannels.add(future.channel());
-            } else {
-                throw new IllegalStateException("Can not start server on " + address, future.cause());
-            }
+    private void bootNetworks(InetSocketAddress address) throws NetworkStartupException {
+        for (NetworkInterface interfaze : this.interfaces) {
+            interfaze.start(address);
         }
+    }
 
-        this.getLogger().info(new TranslationContainer("waterdog.query.start", address.toString()).getTranslated());
+    /**
+     * Registers a network interface.
+     * <p>
+     * Interfaces registered after boot, such as in a ProxyStartEvent handler, must be started manually by calling {@link NetworkInterface#start(InetSocketAddress)}.
+     */
+    public void registerInterface(NetworkInterface interfaze) {
+        if (shutdown) {
+            return;
+        }
+        NetworkRegisterEvent event = new NetworkRegisterEvent(interfaze);
+        this.eventManager.callEvent(event);
+        if (!event.isCancelled()) {
+            this.interfaces.add(interfaze);
+        }
+    }
+
+    /**
+     * Returns an unmodifiable list of registered network interfaces.
+     */
+    public List<NetworkInterface> getInterfaces() {
+        return Collections.unmodifiableList(this.interfaces);
     }
 
     private void tickProcessor() {
         if (this.shutdown && !this.tickFuture.isCancelled()) {
             this.tickFuture.cancel(false);
-            this.serverChannels.forEach(Channel::close);
+            this.interfaces.forEach(NetworkInterface::shutdown);
         }
 
         try {
             this.onTick(++this.currentTick);
+            this.interfaces.forEach(NetworkInterface::tick);
         } catch (Exception e) {
             this.logger.error("Error while ticking proxy!", e);
         }
@@ -373,16 +373,14 @@ public class ProxyServer {
         }
 
         try {
-            for (Channel channel : this.serverChannels) {
-                if (channel.isOpen()) {
-                    channel.close().syncUninterruptibly();
-                }
+            for (NetworkInterface interfaze : this.interfaces) {
+                interfaze.shutdown();
             }
         } catch (Exception e) {
             this.getLogger().error("Error while shutting down ProxyServer", e);
         }
 
-        if (!this.tickFuture.isCancelled()) {
+        if (this.tickFuture != null && !this.tickFuture.isCancelled()) {
             this.logger.info("Interrupting scheduler!");
             this.tickFuture.cancel(true);
         }

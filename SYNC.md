@@ -34,7 +34,10 @@
   - Accepted upstream payload selection: certificate chain is preserved for pre-1.26.20 clients or original chain payloads; newer token payloads are rebuilt with the full TokenPayload fields including `mid`.
   - Removed `use_certificate_payload` config compatibility in line with upstream, while preserving fork-specific NetEase validation and chain extraData fields.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Implement network interface system with registration and booting capabilities (#401): https://github.com/WaterdogPE/WaterdogPE/commit/6e6d5f669fdfedb0953d1eaa6ef5d23a3f8ed553
+✅ Implement network interface system with registration and booting capabilities (#401): https://github.com/WaterdogPE/WaterdogPE/commit/6e6d5f669fdfedb0953d1eaa6ef5d23a3f8ed553
+  - Moved RakNet bind/shutdown behavior into `RakNetInterface` and added `NetworkInterface`, `NetworkStartupException`, and cancellable `NetworkRegisterEvent`.
+  - Preserved fork-specific fast codec NetEase codec building and `bedrock.maxDecompressedBytes` setup while exposing boss/worker event loop groups for interfaces.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Expose rewrite API for plugins (#402): https://github.com/WaterdogPE/WaterdogPE/commit/c0be4bda9a5e895248d152d9d8ff54d0f0270a70
 Bump io.netty:netty-transport-native-epoll (#405): https://github.com/WaterdogPE/WaterdogPE/commit/01b9dc424e3474dd013f2dc3b49ac76206e5bf82
 Bump io.netty:netty-transport-native-kqueue (#404): https://github.com/WaterdogPE/WaterdogPE/commit/681b6f6f3d7a1f8f38b6a87c55da274e651fb1fb
