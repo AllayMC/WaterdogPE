@@ -16,7 +16,7 @@ val isDevBuild = providers.gradleProperty("waterdog.is-dev-build")
     .map(String::toBoolean)
     .orElse(true)
     .get()
-val log4j2Version = "2.25.3"
+val log4j2Version = "2.25.4"
 val jlineVersion = "3.30.6"
 val nettyVersion = "4.1.101.Final"
 val raklibVersion = "1.0.0.CR3-20260328.145829-29"
