@@ -50,7 +50,10 @@
   - No additional source change was needed because this fork's Gradle build shares `nettyVersion` across epoll and kqueue, and #405 already updated it to `4.1.135.Final`.
   - Verification: `sh ./gradlew -q dependencyInsight --dependency io.netty:netty-transport-native-kqueue --configuration compileClasspath` resolves kqueue to `4.1.135.Final`.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Prevent queueing packets after channel is closed: https://github.com/WaterdogPE/WaterdogPE/commit/07fe2557d6e5d17cfc0e0ea660c6b413f6001d68
+✅ Prevent queueing packets after channel is closed: https://github.com/WaterdogPE/WaterdogPE/commit/07fe2557d6e5d17cfc0e0ea660c6b413f6001d68
+  - Accepted upstream `ClientPacketQueue` close handling so writes after channel closure go through Netty instead of being retained in a queue that will never drain.
+  - Queued retained packet wrappers are released when the channel becomes inactive, and channels that close before activation no longer throw on a missing tick future.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Store uniqueId from add entity packets: https://github.com/WaterdogPE/WaterdogPE/commit/1e0502717dbc6d52a7a9e8fec467f61ef9fb7939
 Track and reset more states on transfer: https://github.com/WaterdogPE/WaterdogPE/commit/b1d0899ca16a15987a3e2a8bb24fe3d14e2dc02d
 Limit the max pending query sessions: https://github.com/WaterdogPE/WaterdogPE/commit/0223c77bf5ef23760baea6d8bb45f6c9ab883966
