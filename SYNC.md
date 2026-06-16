@@ -83,7 +83,9 @@
   - Accepted upstream `MINECRAFT_PE_1_26_30` protocol entry with `Bedrock_v1001.CODEC`.
   - Kept this fork's Protocol dependency at `1.26.30-R1` as requested and preserved existing NetEase codec support without adding a nonexistent NetEase v1001 codec.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Set the disconnect reason to DISCONNECTED: https://github.com/WaterdogPE/WaterdogPE/commit/9cfd93bc6094e7b72703c0edf96ef8517c435282
+✅ Set the disconnect reason to DISCONNECTED: https://github.com/WaterdogPE/WaterdogPE/commit/9cfd93bc6094e7b72703c0edf96ef8517c435282
+  - Accepted upstream `DisconnectPacket` reason field update to send `DisconnectFailReason.DISCONNECTED`.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Add an event called for incompatible protocol to allow custom messages: https://github.com/WaterdogPE/WaterdogPE/commit/27f929f12512158612054b5439d36447fd794b72
 Allow closing packs: https://github.com/WaterdogPE/WaterdogPE/commit/4695b161a9e1f19d4b0771272a11e9b3be386b2b
 Add ProxyServer#reloadPackManager: https://github.com/WaterdogPE/WaterdogPE/commit/eaf1a9079d2ab1e78baad4189cf7483fdbb9226b
