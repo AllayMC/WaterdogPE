@@ -72,7 +72,10 @@
 ✅ Force disable client side generation: https://github.com/WaterdogPE/WaterdogPE/commit/2a38fbc638e99a0e5a243aa6fc5324502dfd92d6
   - Accepted upstream `StartGamePacket#setClientSideGenerationEnabled(false)` during initial downstream join.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Asynchronously resolve server addresses: https://github.com/WaterdogPE/WaterdogPE/commit/953e899cec47e769acf8990a0053a3621c424fe5
+✅ Asynchronously resolve server addresses: https://github.com/WaterdogPE/WaterdogPE/commit/953e899cec47e769acf8990a0053a3621c424fe5
+  - Accepted upstream DNS cache and background refresh in `ServerInfo` so downstream connects and pings do not resolve hostnames on Netty worker event loops.
+  - Switched Bedrock connect/ping targets to `getResolvedAddress()` while preserving this fork's NetEase RakNet protocol version selection.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Consistently use this.logger on ProxyServer: https://github.com/WaterdogPE/WaterdogPE/commit/0316e93409a75d7cb7fa518a0befdce48dfcc856
 Add support for 1.26.30 (v1001) (#411): https://github.com/WaterdogPE/WaterdogPE/commit/b4332d9482007279d96f1ae5c303a4096a5e55d8
 Set the disconnect reason to DISCONNECTED: https://github.com/WaterdogPE/WaterdogPE/commit/9cfd93bc6094e7b72703c0edf96ef8517c435282
