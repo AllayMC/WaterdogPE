@@ -10,7 +10,10 @@
   - Ported upstream Maven `raklib.version` update to this fork's Gradle `raklibVersion`.
   - Preserved fork-specific Gradle build layout and NetEase protocol handling.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Bump raknet version (#396): https://github.com/WaterdogPE/WaterdogPE/commit/a21da617179f3ae7e183006f1fa0093261f8f81f
+✅ Bump raknet version (#396): https://github.com/WaterdogPE/WaterdogPE/commit/a21da617179f3ae7e183006f1fa0093261f8f81f
+  - Ported upstream Maven `raklib.version` update to this fork's Gradle `raklibVersion`.
+  - Preserved fork-specific Gradle build layout and NetEase protocol handling.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Do not NPE on wrong login flow: https://github.com/WaterdogPE/WaterdogPE/commit/c5bf314422e096a10c2c5d5de6370a95f4d02ecf
 A couple small improvements: https://github.com/WaterdogPE/WaterdogPE/commit/203e08b7e4985e2664c3d7f095dd7a1c39cb1d20
 Added 1.26.20 (v975) support (#397): https://github.com/WaterdogPE/WaterdogPE/commit/7b9fce1341200342434a9f48cb9d3c8a39d063a7
