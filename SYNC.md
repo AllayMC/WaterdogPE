@@ -94,5 +94,7 @@
   - Added `ResourcePack#close()` and `ZipResourcePack` cleanup of the underlying `ZipFile`.
   - Added `PackManager#clear()` and close-on-unregister behavior so loaded pack files can be released before reload/removal.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Add ProxyServer#reloadPackManager: https://github.com/WaterdogPE/WaterdogPE/commit/eaf1a9079d2ab1e78baad4189cf7483fdbb9226b
+✅ Add ProxyServer#reloadPackManager: https://github.com/WaterdogPE/WaterdogPE/commit/eaf1a9079d2ab1e78baad4189cf7483fdbb9226b
+  - Added `ProxyServer#reloadPackManager()` to clear loaded packs and reload the configured packs directory.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Improve pack sending (#413): https://github.com/WaterdogPE/WaterdogPE/commit/b3ab8f2e463897e6220720a183a187d75ec01649
