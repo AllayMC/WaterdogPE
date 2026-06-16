@@ -21,6 +21,7 @@ import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataMap;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataType;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityLinkData;
+import org.cloudburstmc.protocol.bedrock.data.primitiveshape.*;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.types.RewriteData;
 import dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils;
@@ -372,6 +373,85 @@ public class EntityMap implements BedrockPacketHandler {
             signal = mergeSignals(signal, returnedSignal);
         }
         return signal;
+    }
+
+    @Override
+    public PacketSignal handle(PrimitiveShapesPacket packet) {
+        PacketSignal signal = PacketSignal.UNHANDLED;
+        ListIterator<PrimitiveShape> iterator = packet.getShapes().listIterator();
+        while (iterator.hasNext()) {
+            PrimitiveShape shape = iterator.next();
+            Long attachedEntityId = shape.getAttachedToEntityId();
+            if (attachedEntityId == null) {
+                continue;
+            }
+
+            long rewriteId = PlayerRewriteUtils.rewriteId(attachedEntityId, this.rewrite.getEntityId(), this.rewrite.getOriginalEntityId());
+            if (rewriteId != attachedEntityId) {
+                iterator.set(rewritePrimitiveShape(shape, rewriteId));
+                signal = PacketSignal.HANDLED;
+            }
+        }
+        return signal;
+    }
+
+    private static PrimitiveShape rewritePrimitiveShape(PrimitiveShape shape, long attachedEntityId) {
+        if (shape instanceof PrimitiveArrow arrow) {
+            return new PrimitiveArrow(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    arrow.getArrowEndPosition(), arrow.getArrowHeadLength(), arrow.getArrowHeadRadius(),
+                    arrow.getArrowHeadSegments(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveBox box) {
+            return new PrimitiveBox(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    box.getBoxBounds(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveCircle circle) {
+            return new PrimitiveCircle(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    circle.getSegments(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveCone cone) {
+            return new PrimitiveCone(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    cone.getHeight(), cone.getSegments(), cone.getRadii(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveCylinder cylinder) {
+            return new PrimitiveCylinder(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    cylinder.getHeight(), cylinder.getSegments(), cylinder.getRadiusX(), cylinder.getRadiusZ(),
+                    attachedEntityId);
+        }
+        if (shape instanceof PrimitiveEllipsoid ellipsoid) {
+            return new PrimitiveEllipsoid(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    ellipsoid.getSegments(), ellipsoid.getRadii(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveLine line) {
+            return new PrimitiveLine(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    line.getLineEndPosition(), attachedEntityId);
+        }
+        if (shape instanceof PrimitivePyramid pyramid) {
+            return new PrimitivePyramid(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    pyramid.getHeight(), pyramid.getWidth(), pyramid.getDepth(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveSphere sphere) {
+            return new PrimitiveSphere(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                    sphere.getSegments(), attachedEntityId);
+        }
+        if (shape instanceof PrimitiveText text) {
+            return new PrimitiveText(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                    shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), text.getText(),
+                    text.isUseRotation(), text.getBackgroundColor(), text.isDepthTest(), text.isShowBackface(),
+                    text.isShowTextBackface(), shape.getMaximumRenderDistance(), attachedEntityId);
+        }
+        return new PrimitiveShape(shape.getId(), shape.getDimension(), shape.getPosition(), shape.getScale(),
+                shape.getRotation(), shape.getTotalTimeLeft(), shape.getColor(), shape.getMaximumRenderDistance(),
+                attachedEntityId);
     }
 
     private PacketSignal rewriteMetadata(EntityDataMap metadata) {
