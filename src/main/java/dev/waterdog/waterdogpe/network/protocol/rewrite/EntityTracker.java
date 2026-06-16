@@ -41,13 +41,13 @@ public class EntityTracker implements BedrockPacketHandler {
 
     @Override
     public PacketSignal handle(AddPlayerPacket packet) {
-        this.player.getEntities().add(packet.getRuntimeEntityId());
+        this.player.getEntities().add(packet.getUniqueEntityId());
         return PacketSignal.UNHANDLED;
     }
 
     @Override
     public PacketSignal handle(AddEntityPacket packet) {
-        this.player.getEntities().add(packet.getRuntimeEntityId());
+        this.player.getEntities().add(packet.getUniqueEntityId());
         for (EntityLinkData entityLink : packet.getEntityLinks()) {
             this.handleEntityLink(entityLink);
         }
@@ -56,13 +56,13 @@ public class EntityTracker implements BedrockPacketHandler {
 
     @Override
     public PacketSignal handle(AddItemEntityPacket packet) {
-        this.player.getEntities().add(packet.getRuntimeEntityId());
+        this.player.getEntities().add(packet.getUniqueEntityId());
         return PacketSignal.UNHANDLED;
     }
 
     @Override
     public PacketSignal handle(AddPaintingPacket packet) {
-        this.player.getEntities().add(packet.getRuntimeEntityId());
+        this.player.getEntities().add(packet.getUniqueEntityId());
         return PacketSignal.UNHANDLED;
     }
 

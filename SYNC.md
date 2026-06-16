@@ -54,7 +54,10 @@
   - Accepted upstream `ClientPacketQueue` close handling so writes after channel closure go through Netty instead of being retained in a queue that will never drain.
   - Queued retained packet wrappers are released when the channel becomes inactive, and channels that close before activation no longer throw on a missing tick future.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Store uniqueId from add entity packets: https://github.com/WaterdogPE/WaterdogPE/commit/1e0502717dbc6d52a7a9e8fec467f61ef9fb7939
+✅ Store uniqueId from add entity packets: https://github.com/WaterdogPE/WaterdogPE/commit/1e0502717dbc6d52a7a9e8fec467f61ef9fb7939
+  - Accepted upstream `EntityTracker` fix so tracked entity cleanup stores unique entity IDs from add packets instead of runtime IDs.
+  - This matches `RemoveEntityPacket` and the transfer cleanup path, which removes entities by unique ID.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Track and reset more states on transfer: https://github.com/WaterdogPE/WaterdogPE/commit/b1d0899ca16a15987a3e2a8bb24fe3d14e2dc02d
 Limit the max pending query sessions: https://github.com/WaterdogPE/WaterdogPE/commit/0223c77bf5ef23760baea6d8bb45f6c9ab883966
 Add timeout to PlayerLoginEvent so it doesn't hang forever: https://github.com/WaterdogPE/WaterdogPE/commit/c4baee25bce1b8435d3d5be743194abea954657e
