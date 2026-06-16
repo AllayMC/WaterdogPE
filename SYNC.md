@@ -38,7 +38,10 @@
   - Moved RakNet bind/shutdown behavior into `RakNetInterface` and added `NetworkInterface`, `NetworkStartupException`, and cancellable `NetworkRegisterEvent`.
   - Preserved fork-specific fast codec NetEase codec building and `bedrock.maxDecompressedBytes` setup while exposing boss/worker event loop groups for interfaces.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Expose rewrite API for plugins (#402): https://github.com/WaterdogPE/WaterdogPE/commit/c0be4bda9a5e895248d152d9d8ff54d0f0270a70
+✅ Expose rewrite API for plugins (#402): https://github.com/WaterdogPE/WaterdogPE/commit/c0be4bda9a5e895248d152d9d8ff54d0f0270a70
+  - Added public `RewriteData#rewriteEntityId(long, LongConsumer)` for plugin-facing entity ID rewrite access.
+  - Kept this fork's current `PrimitiveShapesPacket` rewrite adaptation instead of upstream's `DebugDrawerPacket` API name.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Bump io.netty:netty-transport-native-epoll (#405): https://github.com/WaterdogPE/WaterdogPE/commit/01b9dc424e3474dd013f2dc3b49ac76206e5bf82
 Bump io.netty:netty-transport-native-kqueue (#404): https://github.com/WaterdogPE/WaterdogPE/commit/681b6f6f3d7a1f8f38b6a87c55da274e651fb1fb
 Prevent queueing packets after channel is closed: https://github.com/WaterdogPE/WaterdogPE/commit/07fe2557d6e5d17cfc0e0ea660c6b413f6001d68

@@ -64,12 +64,7 @@ public class EntityMap implements BedrockPacketHandler {
     }
 
     private PacketSignal rewriteId(long from, LongConsumer setter) {
-        long rewriteId = PlayerRewriteUtils.rewriteId(from, this.rewrite.getEntityId(), this.rewrite.getOriginalEntityId());
-        if (rewriteId == from) {
-            return PacketSignal.UNHANDLED;
-        }
-        setter.accept(rewriteId);
-        return PacketSignal.HANDLED;
+        return this.rewrite.rewriteEntityId(from, setter);
     }
 
     @Override
