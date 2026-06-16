@@ -46,7 +46,10 @@
   - Ported upstream Maven `netty.version` update to this fork's Gradle `nettyVersion` (`4.1.135.Final`).
   - The Gradle build shares this version for epoll and kqueue, so kqueue is also aligned by this change.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Bump io.netty:netty-transport-native-kqueue (#404): https://github.com/WaterdogPE/WaterdogPE/commit/681b6f6f3d7a1f8f38b6a87c55da274e651fb1fb
+✅ Bump io.netty:netty-transport-native-kqueue (#404): https://github.com/WaterdogPE/WaterdogPE/commit/681b6f6f3d7a1f8f38b6a87c55da274e651fb1fb
+  - No additional source change was needed because this fork's Gradle build shares `nettyVersion` across epoll and kqueue, and #405 already updated it to `4.1.135.Final`.
+  - Verification: `sh ./gradlew -q dependencyInsight --dependency io.netty:netty-transport-native-kqueue --configuration compileClasspath` resolves kqueue to `4.1.135.Final`.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Prevent queueing packets after channel is closed: https://github.com/WaterdogPE/WaterdogPE/commit/07fe2557d6e5d17cfc0e0ea660c6b413f6001d68
 Store uniqueId from add entity packets: https://github.com/WaterdogPE/WaterdogPE/commit/1e0502717dbc6d52a7a9e8fec467f61ef9fb7939
 Track and reset more states on transfer: https://github.com/WaterdogPE/WaterdogPE/commit/b1d0899ca16a15987a3e2a8bb24fe3d14e2dc02d
