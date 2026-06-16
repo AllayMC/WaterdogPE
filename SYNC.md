@@ -2,7 +2,10 @@
   - Ported upstream Maven property update to this fork's Gradle build by updating `log4j2Version` to 2.25.4. This also keeps `log4j-api` aligned with `log4j-core` because the Gradle build uses one shared version.
   - Fork-specific Gradle migration, Java 21 toolchain, and publishing coordinates were preserved.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Bump raknet version (#394): https://github.com/WaterdogPE/WaterdogPE/commit/c0238184807cc61e06b1ab8a4c8cef571e120d38
+✅ Bump raknet version (#394): https://github.com/WaterdogPE/WaterdogPE/commit/c0238184807cc61e06b1ab8a4c8cef571e120d38
+  - Ported upstream Maven `raklib.version` update to this fork's Gradle `raklibVersion`.
+  - Preserved fork-specific Gradle build layout and NetEase protocol handling.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Bump raknet version (#395): https://github.com/WaterdogPE/WaterdogPE/commit/66372092c98d0b2e4b1cefe3d8d40c2b36f4f279
 Bump raknet version (#396): https://github.com/WaterdogPE/WaterdogPE/commit/a21da617179f3ae7e183006f1fa0093261f8f81f
 Do not NPE on wrong login flow: https://github.com/WaterdogPE/WaterdogPE/commit/c5bf314422e096a10c2c5d5de6370a95f4d02ecf
