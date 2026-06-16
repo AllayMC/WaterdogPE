@@ -19,7 +19,7 @@ val isDevBuild = providers.gradleProperty("waterdog.is-dev-build")
 val log4j2Version = "2.25.4"
 val jlineVersion = "3.30.6"
 val nettyVersion = "4.1.101.Final"
-val raklibVersion = "1.0.0.CR3-20260418.124334-32"
+val raklibVersion = "1.0.0.CR3-20260421.100433-33"
 val protocolVersion = "1.26.10-R2"
 
 group = "org.allaymc"
