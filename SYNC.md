@@ -65,7 +65,10 @@
 ✅ Limit the max pending query sessions: https://github.com/WaterdogPE/WaterdogPE/commit/0223c77bf5ef23760baea6d8bb45f6c9ab883966
   - Accepted upstream pending query challenge cap by setting `QueryHandler`'s expiring session map max size to 2000.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Add timeout to PlayerLoginEvent so it doesn't hang forever: https://github.com/WaterdogPE/WaterdogPE/commit/c4baee25bce1b8435d3d5be743194abea954657e
+✅ Add timeout to PlayerLoginEvent so it doesn't hang forever: https://github.com/WaterdogPE/WaterdogPE/commit/c4baee25bce1b8435d3d5be743194abea954657e
+  - Accepted upstream 60-second timeout for async `PlayerLoginEvent` completion so login cannot strand a player indefinitely.
+  - Accepted upstream active downstream disconnect fallback handling when the server closes without a disconnect packet or timeout path.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Force disable client side generation: https://github.com/WaterdogPE/WaterdogPE/commit/2a38fbc638e99a0e5a243aa6fc5324502dfd92d6
 Asynchronously resolve server addresses: https://github.com/WaterdogPE/WaterdogPE/commit/953e899cec47e769acf8990a0053a3621c424fe5
 Consistently use this.logger on ProxyServer: https://github.com/WaterdogPE/WaterdogPE/commit/0316e93409a75d7cb7fa518a0befdce48dfcc856

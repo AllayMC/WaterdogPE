@@ -56,6 +56,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -74,6 +76,9 @@ public class ProxiedPlayer implements CommandSender {
     private final AtomicBoolean loginCalled = new AtomicBoolean(false);
     private final AtomicBoolean loginCompleted = new AtomicBoolean(false);
     private volatile CharSequence disconnectReason;
+
+    private static final long LOGIN_EVENT_TIMEOUT_SECONDS = 60;
+
     @Getter
     private final RewriteData rewriteData = new RewriteData();
     @Getter
@@ -171,11 +176,18 @@ public class ProxiedPlayer implements CommandSender {
         }
 
         PlayerLoginEvent event = new PlayerLoginEvent(this);
-        this.proxy.getEventManager().callEvent(event).whenComplete((futureEvent, error) -> {
+        this.proxy.getEventManager().callEvent(event)
+                .orTimeout(LOGIN_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .whenComplete((futureEvent, error) -> {
             this.loginCompleted.set(true);
 
             if (error != null) {
-                this.getLogger().throwing(error);
+                if (error instanceof TimeoutException) {
+                    this.getLogger().warning("[{}|{}] PlayerLoginEvent did not complete within {}s - forcing disconnect",
+                            this.getAddress(), this.getName(), LOGIN_EVENT_TIMEOUT_SECONDS);
+                } else {
+                    this.getLogger().throwing(error);
+                }
                 this.disconnect(new TranslationContainer("waterdog.downstream.initial.connect"));
                 return;
             }
@@ -449,6 +461,15 @@ public class ProxiedPlayer implements CommandSender {
                 connection.getServerInfo().getServerName() + "] has disconnected");
         if (this.getPendingConnection() == connection) {
             this.setPendingConnection(null);
+            return;
+        }
+
+        if (connection == this.clientConnection
+                && this.getPendingConnection() == null
+                && this.pendingServers.isEmpty()
+                && !this.disconnected.get()
+                && !this.sendToFallback(connection.getServerInfo(), ReconnectReason.UNKNOWN, "Downstream disconnected")) {
+            this.disconnect(new TranslationContainer("waterdog.downstream.down", connection.getServerInfo().getServerName(), "disconnected"));
         }
     }
 
