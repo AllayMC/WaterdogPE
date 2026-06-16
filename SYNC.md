@@ -62,7 +62,9 @@
   - Accepted upstream tracking/reset coverage for volume entities, fog, input locks, hidden HUD elements, open containers, time, and default game mode resolution during server transfer.
   - Adapted the change to this fork's current Protocol API while preserving the NetEase transfer BiomeDefinitionListPacket guard and leaving the later PlayerLoginEvent timeout change for its own sync entry.
   - Test: `sh ./gradlew test` passed; `test` had no sources.
-Limit the max pending query sessions: https://github.com/WaterdogPE/WaterdogPE/commit/0223c77bf5ef23760baea6d8bb45f6c9ab883966
+✅ Limit the max pending query sessions: https://github.com/WaterdogPE/WaterdogPE/commit/0223c77bf5ef23760baea6d8bb45f6c9ab883966
+  - Accepted upstream pending query challenge cap by setting `QueryHandler`'s expiring session map max size to 2000.
+  - Test: `sh ./gradlew test` passed; `test` had no sources.
 Add timeout to PlayerLoginEvent so it doesn't hang forever: https://github.com/WaterdogPE/WaterdogPE/commit/c4baee25bce1b8435d3d5be743194abea954657e
 Force disable client side generation: https://github.com/WaterdogPE/WaterdogPE/commit/2a38fbc638e99a0e5a243aa6fc5324502dfd92d6
 Asynchronously resolve server addresses: https://github.com/WaterdogPE/WaterdogPE/commit/953e899cec47e769acf8990a0053a3621c424fe5
