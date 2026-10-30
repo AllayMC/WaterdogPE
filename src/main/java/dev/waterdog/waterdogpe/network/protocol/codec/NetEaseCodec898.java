@@ -10,7 +10,6 @@ import org.cloudburstmc.protocol.bedrock.codec.netease.serializer.PyRpcSerialize
 import org.cloudburstmc.protocol.bedrock.codec.netease.serializer.StoreBuySuccessSerializer;
 import org.cloudburstmc.protocol.bedrock.codec.v766_netease.serializer.PlayerAuthInputSerializer_v766_NetEase;
 import org.cloudburstmc.protocol.bedrock.codec.v860_netease.serializer.BiomeDefinitionListSerializer_v860_NetEase;
-import org.cloudburstmc.protocol.bedrock.codec.v860_netease.serializer.ContainerOpenSerializer_v860_NetEase;
 import org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898;
 import org.cloudburstmc.protocol.bedrock.codec.v898.BedrockCodecHelper_v898;
 import org.cloudburstmc.protocol.bedrock.data.Ability;
@@ -65,7 +64,7 @@ public final class NetEaseCodec898 extends Bedrock_v898 {
             .updateSerializer(TextPacket.class, TextSerializer_v898_NetEase.INSTANCE)
             .updateSerializer(PlayerEnchantOptionsPacket.class, PlayerEnchantOptionsSerializer_v407_NetEase.INSTANCE)
             .updateSerializer(BiomeDefinitionListPacket.class, BiomeDefinitionListSerializer_v860_NetEase.INSTANCE)
-            .updateSerializer(ContainerOpenPacket.class, ContainerOpenSerializer_v860_NetEase.INSTANCE)
+            .updateSerializer(ContainerOpenPacket.class, ContainerOpenSerializer_v898_NetEase.INSTANCE)
             .registerPacket(PyRpcPacket::new, PyRpcSerializer.INSTANCE, 200, PacketRecipient.BOTH)
             .registerPacket(StoreBuySuccessPacket::new, StoreBuySuccessSerializer.INSTANCE, 202, PacketRecipient.BOTH)
             .registerPacket(NetEaseJsonPacket::new, NetEaseJsonSerializer.INSTANCE, 203, PacketRecipient.BOTH)
