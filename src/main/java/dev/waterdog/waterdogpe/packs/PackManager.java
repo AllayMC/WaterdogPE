@@ -171,6 +171,7 @@ public class PackManager {
         this.packsInfoPacket.setForcedToAccept(this.proxy.getConfiguration().isForceServerPacks());
         this.packsInfoPacket.setWorldTemplateId(UUID.randomUUID());
         this.packsInfoPacket.setWorldTemplateVersion("");
+        this.packsInfoPacket.setHasAddonPacks(false);
         this.stackPacket.setForcedToAccept(this.proxy.getConfiguration().isOverwriteClientPacks());
 
         this.packsInfoPacket.getBehaviorPackInfos().clear();
@@ -182,14 +183,16 @@ public class PackManager {
         this.stackPacket.setGameVersion("");
 
         for (ResourcePack pack : this.packs.values()) {
+            boolean addonPack = pack.getType().equals(ResourcePack.TYPE_DATA);
             ResourcePacksInfoPacket.Entry infoEntry = new ResourcePacksInfoPacket.Entry(pack.getPackId(), pack.getVersion().toString(),
-                    pack.getPackSize(), pack.getContentKey(), "", pack.getPackId().toString(), false, false, null, false);
+                    pack.getPackSize(), pack.getContentKey(), "", pack.getPackId().toString(), false, false, null, addonPack);
             ResourcePackStackPacket.Entry stackEntry = new ResourcePackStackPacket.Entry(pack.getPackId().toString(), pack.getVersion().toString(), "");
             if (pack.getType().equals(ResourcePack.TYPE_RESOURCES)) {
                 this.packsInfoPacket.getResourcePackInfos().add(infoEntry);
                 this.stackPacket.getResourcePacks().add(stackEntry);
             } else if (pack.getType().equals(ResourcePack.TYPE_DATA)) {
-                this.packsInfoPacket.getBehaviorPackInfos().add(infoEntry);
+                this.packsInfoPacket.setHasAddonPacks(true);
+                this.packsInfoPacket.getResourcePackInfos().add(infoEntry);
                 this.stackPacket.getBehaviorPacks().add(stackEntry);
             }
         }
@@ -217,7 +220,7 @@ public class PackManager {
         if (resourcePack.getType().equals(ResourcePack.TYPE_RESOURCES)) {
             packet.setType(ResourcePackType.RESOURCES);
         } else if (resourcePack.getType().equals(ResourcePack.TYPE_DATA)) {
-            packet.setType(ResourcePackType.ADDON);
+            packet.setType(ResourcePackType.DATA_ADD_ON);
         }
         return packet;
     }
