@@ -243,7 +243,15 @@ public class ProxyServer {
             for (ProtocolVersion version : ProtocolVersion.values()) {
                 version.setBedrockCodec(ProtocolCodecs.buildCodec(version.getDefaultCodec()));
                 if (version.getDefaultNetEaseCodec() != null) {
-                    version.setNetEaseCodec(ProtocolCodecs.buildCodec(version.getDefaultNetEaseCodec()));
+                    // NetEase clients speak packets the proxy has no rewrite rule for (for example
+                    // PlayerAuthInput and JigsawStructureData), so keep the whole packet table.
+                    version.setNetEaseCodec(ProtocolCodecs.buildCodec(version.getDefaultNetEaseCodec(), true));
+                    var netEase = version.getNetEaseCodec();
+                    this.getLogger().info("[codec] {} netEase table: PlayerAuthInput={} DimensionData={} JigsawStructureData={}",
+                            version.name(),
+                            netEase.getPacketDefinition(org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket.class) != null ? "yes" : "NO",
+                            netEase.getPacketDefinition(org.cloudburstmc.protocol.bedrock.packet.DimensionDataPacket.class) != null ? "yes" : "NO",
+                            netEase.getPacketDefinition(org.cloudburstmc.protocol.bedrock.packet.JigsawStructureDataPacket.class) != null ? "yes" : "NO");
                 }
             }
         }

@@ -112,6 +112,18 @@ public class LoginData {
         return this.loginPacket;
     }
 
+    /**
+     * Sends the client's own LoginPacket to the backend instead of a re-signed one.
+     *
+     * <p>A re-signed chain reaches the backend as unauthenticated, which makes a NetEase server stall
+     * the join, so the original chain is kept for those clients.</p>
+     *
+     * @param packet the LoginPacket received from the client
+     */
+    public void keepClientLoginPacket(LoginPacket packet) {
+        this.loginPacket = packet;
+    }
+
     public boolean isNetEaseClient() {
         return this.netEaseClient;
     }

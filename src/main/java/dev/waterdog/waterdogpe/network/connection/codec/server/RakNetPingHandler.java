@@ -43,12 +43,17 @@ public class RakNetPingHandler extends SimpleChannelInboundHandler<RakPing> {
     protected void channelRead0(ChannelHandlerContext ctx, RakPing rakPing) {
         ProxyConfig config = this.proxy.getConfiguration();
 
+        // NetEase 3.9 clients (protocol 860) mis-detect the server when the pong advertises the newest
+        // supported version, so report the version those clients speak.
+        ProtocolVersion pingVersion = config.isNeteaseClientSupport()
+                ? ProtocolVersion.MINECRAFT_PE_1_21_124
+                : ProtocolVersion.latest();
         ProxyPingEvent event = new ProxyPingEvent(
                 config.getMotd(),
                 config.getSubMotd(),
                 "Survival",
                 "MCPE",
-                ProtocolVersion.latest().getMinecraftVersion(),
+                pingVersion.getMinecraftVersion(),
                 this.proxy.getPlayerManager().getPlayers().values(),
                 config.getMaxPlayerCount(),
                 rakPing.getSender()
@@ -60,7 +65,7 @@ public class RakNetPingHandler extends SimpleChannelInboundHandler<RakPing> {
         StringJoiner joiner = new StringJoiner(";");
         joiner.add("MCPE");
         joiner.add(event.getMotd().replace(";", "\\;")); // MOTD
-        joiner.add(Integer.toString(ProtocolVersion.latest().getProtocol())); // Protocol id
+        joiner.add(Integer.toString(pingVersion.getProtocol())); // Protocol id
         joiner.add(event.getVersion()); // Game version
         joiner.add(Integer.toString(event.getPlayerCount())); // Player count
         joiner.add(Integer.toString(event.getMaximumPlayerCount())); // Max players

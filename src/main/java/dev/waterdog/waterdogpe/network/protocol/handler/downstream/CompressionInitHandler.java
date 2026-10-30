@@ -35,6 +35,8 @@ public class CompressionInitHandler extends AbstractDownstreamHandler {
         RequestNetworkSettingsPacket packet = new RequestNetworkSettingsPacket();
         packet.setProtocolVersion(player.getProtocol().getProtocol());
         connection.sendPacket(packet);
+        player.getProxy().getLogger().debug("Downstream {}: sent RequestNetworkSettings protocol={} netease={}",
+                connection.getServerInfo().getServerName(), packet.getProtocolVersion(), player.isNetEaseClient());
     }
 
     @Override
@@ -44,6 +46,8 @@ public class CompressionInitHandler extends AbstractDownstreamHandler {
 
     @Override
     public PacketSignal handle(NetworkSettingsPacket packet) {
+        player.getProxy().getLogger().debug("Downstream NetworkSettings: alg={} netease={}",
+                packet.getCompressionAlgorithm(), player.isNetEaseClient());
         if (this.player.isNetEaseClient()) {
             // NetEase clients use raw deflate format, downstream server will also use raw deflate
             // because it detects RakNet v8 from the proxy connection
@@ -53,7 +57,12 @@ public class CompressionInitHandler extends AbstractDownstreamHandler {
             this.connection.setCompression(compression);
         }
         this.connection.setPacketHandler(nextHandler);
-        this.connection.sendPacket(this.player.getLoginData().getLoginPacket());
+        try {
+            this.connection.sendPacket(this.player.getLoginData().getLoginPacket());
+            player.getProxy().getLogger().debug("Downstream login packet sent");
+        } catch (Throwable t) {
+            player.getProxy().getLogger().error("Downstream login packet failed", t);
+        }
         return Signals.CANCEL;
     }
 }

@@ -121,9 +121,11 @@ public class LoginUpstreamHandler implements BedrockPacketHandler {
             // Find NetEase codec for the protocol version
             BedrockCodec netEaseCodec = protocol.getNetEaseCodec();
             if (netEaseCodec == null) {
+                this.proxy.getLogger().warning("[{}] <-> Unsupported NetEase client version (protocol={}, rak={})", this.session.getSocketAddress(), packet.getProtocolVersion(), rakVersion);
                 this.session.disconnect("Unsupported NetEase client version");
                 return PacketSignal.HANDLED;
             }
+            this.proxy.getLogger().info("[{}] <-> NetEase client accepted (protocol={}, codec={})", this.session.getSocketAddress(), packet.getProtocolVersion(), netEaseCodec.getMinecraftVersion());
 
             // Use NetEase codec
             this.session.setCodec(netEaseCodec);
@@ -206,6 +208,11 @@ public class LoginUpstreamHandler implements BedrockPacketHandler {
                     protocol.getProtocol(), protocol.getMinecraftVersion());
 
             LoginData loginData = handshakeEntry.buildData(this.session, this.proxy);
+            if (this.netEaseClient) {
+                // Keep the client's own certificate chain, otherwise the backend sees an
+                // unauthenticated login and never finishes the NetEase join handshake.
+                loginData.keepClientLoginPacket(packet);
+            }
 
             PlayerAuthenticatedEvent loginEvent = new PlayerAuthenticatedEvent(ProxiedPlayer.class, loginData, (InetSocketAddress) this.session.getSocketAddress());
             this.proxy.getEventManager().callEvent(loginEvent);
@@ -241,7 +248,6 @@ public class LoginUpstreamHandler implements BedrockPacketHandler {
     private void finishConnection() {
         PlayStatusPacket status = new PlayStatusPacket();
         status.setStatus(PlayStatusPacket.Status.LOGIN_SUCCESS);
-        this.session.sendPacket(status);
-        this.player.initPlayer();
+        this.session.sendPacket(status);        this.player.initPlayer();
     }
 }

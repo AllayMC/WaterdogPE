@@ -51,6 +51,17 @@ public class ConnectedUpstreamHandler extends AbstractUpstreamHandler implements
     }
 
     @Override
+    public PacketSignal handlePacket(BedrockPacket packet) {
+        if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.UnknownPacket unknown) {
+            this.player.getLogger().debug("Upstream <- UnknownPacket id={} len={}",
+                    unknown.getPacketId(), unknown.getPayload() == null ? -1 : unknown.getPayload().readableBytes());
+        } else {
+            this.player.getLogger().debug("Upstream <- {}", packet.getClass().getSimpleName());
+        }
+        return super.handlePacket(packet);
+    }
+
+    @Override
     public final PacketSignal handle(RequestChunkRadiusPacket packet) {
         this.player.getLoginData().setChunkRadius(packet);
         return PacketSignal.UNHANDLED;

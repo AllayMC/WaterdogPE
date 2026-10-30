@@ -20,7 +20,7 @@ val log4j2Version = "2.25.3"
 val jlineVersion = "3.30.6"
 val nettyVersion = "4.1.101.Final"
 val raklibVersion = "1.0.0.CR3-20260328.145829-29"
-val protocolVersion = "1.26.10-R2"
+val protocolVersion = "1.26.40-R1"
 
 group = "org.allaymc"
 version = if (isDevBuild) "$baseVersion-SNAPSHOT" else baseVersion

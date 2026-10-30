@@ -106,11 +106,17 @@ public class BedrockClientConnection extends SimpleChannelInboundHandler<Bedrock
 
     @Override
     public void sendPacket(BedrockPacket packet) {
+        if (packet != null) {
+            this.player.getLogger().info("[to-client] {}", packet.getClass().getSimpleName());
+        }
         this.channel.writeAndFlush(packet);
     }
 
     @Override
     public void sendPacketImmediately(BedrockPacket packet) {
+        if (packet != null) {
+            this.player.getLogger().info("[to-client-now] {}", packet.getClass().getSimpleName());
+        }
         this.channel.writeAndFlush(BedrockBatchWrapper.create(this.getSubClientId(), packet));
     }
 
