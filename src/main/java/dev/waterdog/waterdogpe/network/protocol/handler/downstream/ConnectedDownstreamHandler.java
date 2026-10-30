@@ -25,12 +25,14 @@ import dev.waterdog.waterdogpe.event.defaults.PostTransferCompleteEvent;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.types.RewriteData;
 import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
+import dev.waterdog.waterdogpe.network.protocol.ProtocolVersion;
 import dev.waterdog.waterdogpe.network.protocol.Signals;
 import dev.waterdog.waterdogpe.utils.types.TranslationContainer;
 import org.cloudburstmc.protocol.bedrock.packet.PacketSignal;
 
 import static dev.waterdog.waterdogpe.network.protocol.Signals.mergeSignals;
 import static dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils.injectEntityImmobile;
+import static dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils.injectInputLocks;
 
 public class ConnectedDownstreamHandler extends AbstractDownstreamHandler {
     private static final java.util.concurrent.atomic.AtomicInteger chunkLogs = new java.util.concurrent.atomic.AtomicInteger();
@@ -91,6 +93,9 @@ public class ConnectedDownstreamHandler extends AbstractDownstreamHandler {
         RewriteData rewriteData = this.player.getRewriteData();
         if (!rewriteData.hasImmobileFlag() && !this.player.isNetEaseClient()) {
             injectEntityImmobile(this.player.getConnection(), rewriteData.getEntityId(), false);
+        }
+        if (this.player.getProtocol().isAfterOrEqual(ProtocolVersion.MINECRAFT_PE_1_19_50)) {
+            injectInputLocks(this.player.getConnection(), this.player.getInputLockData(), rewriteData.getSpawnPosition());
         }
 
         if (!this.player.isNetEaseClient()) {
