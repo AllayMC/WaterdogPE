@@ -152,6 +152,12 @@ public abstract class AbstractDownstreamHandler implements ProxyPacketHandler {
                 if (this.player.getProtocol().isAfterOrEqual(ProtocolVersion.MINECRAFT_PE_1_12)) {
                     connection.sendPacket(this.player.getLoginData().getCachePacket());
                 }
+                if (this.player.isNetEaseClient()) {
+                    // A NetEase client only finishes its join when the backend's LOGIN_SUCCESS reaches
+                    // it; consuming the packet leaves its connecting screen up forever.
+                    this.player.getLogger().debug("Forwarding backend LOGIN_SUCCESS to NetEase client");
+                    return PacketSignal.UNHANDLED;
+                }
                 return Signals.CANCEL;
             }
             case LOGIN_FAILED_CLIENT_OLD, LOGIN_FAILED_SERVER_OLD -> message = "Incompatible version";

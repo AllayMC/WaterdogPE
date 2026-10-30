@@ -103,7 +103,8 @@ public class ProxiedBedrockPeer extends BedrockPeer {
         super.removeSession(session);
     }
 
-    @Override
+    // Not an override anymore: BedrockPeer dropped the per-tick hook in the
+    // protocol 1.26.40 line and now flushes its own queue on a scheduled delay.
     protected void onTick() {
         if (!this.closed.get() && !this.packetQueue.isEmpty()) {
             BedrockBatchWrapper batch = BedrockBatchWrapper.newInstance();

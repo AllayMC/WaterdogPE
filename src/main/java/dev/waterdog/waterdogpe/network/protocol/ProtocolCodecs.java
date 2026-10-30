@@ -143,6 +143,29 @@ public class ProtocolCodecs {
         return UPDATERS;
     }
 
+    /**
+     * Builds the codec the proxy decodes with.
+     *
+     * @param baseCodec the negotiated codec
+     * @param keepAllPackets when true every packet stays decodable instead of only the rewritten
+     *                       whitelist, which relay hops need once a client speaks packets the
+     *                       proxy has no rewrite rule for
+     * @return the derived codec
+     */
+    public static BedrockCodec buildCodec(BedrockCodec baseCodec, boolean keepAllPackets) {
+        BedrockCodec.Builder builder = baseCodec.toBuilder();
+        if (!keepAllPackets) {
+            DEFAULT_UPDATER.updateCodec(builder, baseCodec);
+        }
+
+        for (ProtocolCodecUpdater updater : UPDATERS) {
+            if (baseCodec.getProtocolVersion() >= updater.getRequiredVersion()) {
+                updater.updateCodec(builder, baseCodec);
+            }
+        }
+        return builder.build();
+    }
+
     public static BedrockCodec buildCodec(BedrockCodec baseCodec) {
         BedrockCodec.Builder builder = baseCodec.toBuilder();
         DEFAULT_UPDATER.updateCodec(builder, baseCodec);

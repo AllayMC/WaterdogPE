@@ -82,6 +82,13 @@ public class ProxiedClientSessionInitializer extends ChannelInitializer<Channel>
             channel.pipeline().addLast(ClientConnection.NAME, handler);
         }
 
+        // Inbound packets on a client connection are client bound, while the channel direction is
+        // SERVER_BOUND; without this the codec drops clientbound-only packets as UnknownPacket.
+        var packetCodec = channel.pipeline().get(dev.waterdog.waterdogpe.network.connection.codec.packet.BedrockPacketCodec.class);
+        if (packetCodec != null) {
+            packetCodec.setInboundRecipient(org.cloudburstmc.protocol.bedrock.data.PacketRecipient.CLIENT);
+        }
+
         if (connection.getPacketDirection() != PacketDirection.SERVER_BOUND) {
             throw new IllegalStateException("Client connection must have a server-bound packet direction");
         }

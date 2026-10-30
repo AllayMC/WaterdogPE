@@ -479,7 +479,9 @@ public class ProxiedPlayer implements CommandSender {
      * @param packet the packet to send
      */
     public void sendPacket(BedrockPacket packet) {
-        if (this.connection != null && this.connection.isConnected()) {
+        if (packet != null) {
+            this.getProxy().getLogger().info("[proxy->client] {}", packet.getClass().getSimpleName());
+        }        if (this.connection != null && this.connection.isConnected()) {
             this.connection.sendPacket(packet);
         }
     }
@@ -490,7 +492,9 @@ public class ProxiedPlayer implements CommandSender {
      * @param packet the packet to send
      */
     public void sendPacketImmediately(BedrockPacket packet) {
-        if (this.connection != null && this.connection.isConnected()) {
+        if (packet != null) {
+            this.getProxy().getLogger().info("[proxy->client-now] {}", packet.getClass().getSimpleName());
+        }        if (this.connection != null && this.connection.isConnected()) {
             this.connection.sendPacketImmediately(packet);
         }
     }

@@ -26,6 +26,7 @@ import dev.waterdog.waterdogpe.network.serverinfo.ServerInfo;
 import dev.waterdog.waterdogpe.network.protocol.ProtocolVersion;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.BlockMap;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.BlockMapSimple;
+import dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.types.BlockPalette;
 import dev.waterdog.waterdogpe.network.protocol.rewrite.types.RewriteData;
 import dev.waterdog.waterdogpe.player.ProxiedPlayer;
@@ -85,7 +86,8 @@ public class InitialHandler extends AbstractDownstreamHandler {
         ResourcePackClientResponsePacket response = new ResourcePackClientResponsePacket();
         response.setStatus(ResourcePackClientResponsePacket.Status.HAVE_ALL_PACKS);
         this.connection.sendPacket(response);
-        return Signals.CANCEL;
+        // The NetEase client also needs the packet itself, otherwise its pack stage never ends.
+        return this.player.isNetEaseClient() ? PacketSignal.UNHANDLED : Signals.CANCEL;
     }
 
     @Override
@@ -96,17 +98,33 @@ public class InitialHandler extends AbstractDownstreamHandler {
         ResourcePackClientResponsePacket response = new ResourcePackClientResponsePacket();
         response.setStatus(ResourcePackClientResponsePacket.Status.COMPLETED);
         this.connection.sendPacket(response);
-        return Signals.CANCEL;
+        return this.player.isNetEaseClient() ? PacketSignal.UNHANDLED : Signals.CANCEL;
     }
 
     @Override
     public final PacketSignal handle(StartGamePacket packet) {
         RewriteData rewriteData = this.player.getRewriteData();
         rewriteData.setOriginalEntityId(packet.getRuntimeEntityId());
-        rewriteData.setEntityId(ThreadLocalRandom.current().nextInt(10000, 15000));
         rewriteData.setGameRules(packet.getGamerules());
         rewriteData.setDimension(packet.getDimensionId());
         rewriteData.setSpawnPosition(packet.getPlayerPosition());
+        if (this.player.isNetEaseClient()) {
+            // Re-encoding StartGame for NetEase mangles the block palette the client derives its
+            // runtime ids from, so keep the server bytes and the server entity id, but still run the
+            // full connected-state setup: block definitions, rewrite enablement and handler switch
+            // are what make chunk forwarding and spawn work at all.
+            rewriteData.setEntityId(packet.getRuntimeEntityId());
+            rewriteData.setBlockProperties(packet.getBlockProperties());
+            this.player.getRewriteMaps().setBlockMap(new BlockMapSimple(this.player));
+            this.player.getLogger().info("[netease] StartGame forwarded untouched (palette preserved)");
+            this.finishInitialization();
+            // The client only leaves the connecting screen once the server acknowledges the dimension
+            // change, which a relayed StartGame never does on its own.
+            PlayerRewriteUtils.injectDimensionChange(this.player.getConnection(), packet.getDimensionId(),
+                    packet.getPlayerPosition(), packet.getRuntimeEntityId(), this.player.getProtocol(), false);
+            return PacketSignal.UNHANDLED;
+        }
+        rewriteData.setEntityId(ThreadLocalRandom.current().nextInt(10000, 15000));
         packet.setRuntimeEntityId(rewriteData.getEntityId());
         packet.setUniqueEntityId(rewriteData.getEntityId());
         packet.setLevelName(rewriteData.getProxyName());
@@ -141,5 +159,21 @@ public class InitialHandler extends AbstractDownstreamHandler {
         this.connection.setPacketHandler(new ConnectedDownstreamHandler(this.player, this.connection));
         this.player.getProxy().getEventManager().callEvent(new InitialServerConnectedEvent(this.player, this.connection));
         return PacketSignal.HANDLED;
+    }
+
+    /**
+     * Applies the connected-state setup that has to run as soon as StartGame was seen, regardless of
+     * whether the packet itself is re-encoded or forwarded untouched.
+     */
+    private void finishInitialization() {
+        BedrockCodecHelper codecHelper = this.player.getConnection().getPeer().getCodecHelper();
+        codecHelper.setBlockDefinitions(FakeDefinitionRegistry.createBlockRegistry());
+        // NetEase clients mirror the backend one-to-one: entity ids are not remapped and no packet is
+        // rebuilt, so the client sees exactly the server stream it would see when connecting directly.
+        this.player.setCanRewrite(!this.player.isNetEaseClient());
+        this.connection.getServerInfo().addConnection(this.connection);
+        this.player.setDownstreamConnection(this.connection);
+        this.connection.setPacketHandler(new ConnectedDownstreamHandler(this.player, this.connection));
+        this.player.getProxy().getEventManager().callEvent(new InitialServerConnectedEvent(this.player, this.connection));
     }
 }

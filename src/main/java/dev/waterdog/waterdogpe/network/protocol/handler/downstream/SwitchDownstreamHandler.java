@@ -105,11 +105,12 @@ public class SwitchDownstreamHandler extends AbstractDownstreamHandler {
 
     @Override
     public PacketSignal handle(BiomeDefinitionListPacket packet) {
-        // NetEase client v686 (1.21.2) triggers BiomeComponentStorage assertion failure
-        // when receiving BiomeDefinitionListPacket after biome storage has been finalized
-        // from the injected empty chunks during transfer.
-        if (this.player.isNetEaseClient()
-                && this.player.getProtocol() == ProtocolVersion.MINECRAFT_PE_1_21_2) {
+        // NetEase clients can assert in BiomeComponentStorage during proxy-side
+        // server switching if a second biome definition list is applied after
+        // the biome registry has been finalized. The initial lobby join still
+        // receives biomes normally; this only suppresses duplicate transfer-time
+        // biome definitions from downstream rooms.
+        if (this.player.isNetEaseClient()) {
             return Signals.CANCEL;
         }
         return PacketSignal.UNHANDLED;

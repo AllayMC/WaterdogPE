@@ -35,6 +35,8 @@ import static dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils.i
 import static dev.waterdog.waterdogpe.network.protocol.user.PlayerRewriteUtils.injectInputLocks;
 
 public class ConnectedDownstreamHandler extends AbstractDownstreamHandler {
+    private static final java.util.concurrent.atomic.AtomicInteger chunkLogs = new java.util.concurrent.atomic.AtomicInteger();
+    private static final java.util.concurrent.atomic.AtomicInteger traceLogs = new java.util.concurrent.atomic.AtomicInteger();
 
     public ConnectedDownstreamHandler(ProxiedPlayer player, ClientConnection connection) {
         super(player, connection);
@@ -42,7 +44,35 @@ public class ConnectedDownstreamHandler extends AbstractDownstreamHandler {
 
     @Override
     public PacketSignal handlePacket(BedrockPacket packet) {
+        if (this.player.isNetEaseClient() && packet instanceof LevelChunkPacket) {
+            // The NetEase client derives block runtime ids from the server palette, and the proxy's
+            // chunk rewrite/encode path shifts them, so forward the server's chunk bytes verbatim.
+            int seen = chunkLogs.incrementAndGet();
+            if (seen % 20 == 0) {
+                this.player.getLogger().info("[chunk] passthrough LevelChunk #{}", seen);
+            }
+            return PacketSignal.UNHANDLED;
+        }
         PacketSignal signal = super.handlePacket(packet);
+        if (packet instanceof org.cloudburstmc.protocol.bedrock.packet.PyRpcPacket
+                || packet instanceof org.cloudburstmc.protocol.bedrock.packet.NetEaseJsonPacket) {
+            this.player.getLogger().info("[netease] downstream {} len={}", packet.getClass().getSimpleName(),
+                    packet.getClass().getSimpleName().length() > 0 ? "?" : "?");
+        }
+        int trace = traceLogs.incrementAndGet();
+        if (trace <= 90 && !(packet instanceof LevelChunkPacket) && !(packet instanceof NetworkChunkPublisherUpdatePacket)) {
+            this.player.getLogger().info("[trace] downstream #{} {}", trace, packet.getClass().getSimpleName());
+        }
+        if (packet instanceof LevelChunkPacket) {
+            int seen = chunkLogs.incrementAndGet();
+            if (seen <= 3 || seen % 25 == 0) {
+                this.player.getLogger().info("[chunk] downstream LevelChunk #{}", seen);
+            }
+        } else if (packet instanceof NetworkChunkPublisherUpdatePacket) {
+            this.player.getLogger().info("[chunk] NetworkChunkPublisherUpdate");
+        } else if (packet instanceof PlayStatusPacket status) {
+            this.player.getLogger().info("[chunk] PlayStatus {}", status.getStatus());
+        }
         if (!player.getPluginPacketHandlers().isEmpty()) {
             for (PluginPacketHandler handler : this.player.getPluginPacketHandlers()) {
                 signal = mergeSignals(signal, handler.handlePacket(packet, PacketDirection.CLIENT_BOUND));
@@ -53,22 +83,29 @@ public class ConnectedDownstreamHandler extends AbstractDownstreamHandler {
 
     @Override
     public PacketSignal handle(PlayStatusPacket packet) {
+        this.player.getLogger().debug("Downstream PlayStatus status={} accept={} netease={}",
+                packet.getStatus(), this.player.acceptPlayStatus(), this.player.isNetEaseClient());
         if (!this.player.acceptPlayStatus() || packet.getStatus() != PlayStatusPacket.Status.PLAYER_SPAWN) {
             return PacketSignal.UNHANDLED;
         }
 
         this.player.setAcceptPlayStatus(false);
         RewriteData rewriteData = this.player.getRewriteData();
-        if (!rewriteData.hasImmobileFlag()) {
+        if (!rewriteData.hasImmobileFlag() && !this.player.isNetEaseClient()) {
             injectEntityImmobile(this.player.getConnection(), rewriteData.getEntityId(), false);
         }
         if (this.player.getProtocol().isAfterOrEqual(ProtocolVersion.MINECRAFT_PE_1_19_50)) {
             injectInputLocks(this.player.getConnection(), this.player.getInputLockData(), rewriteData.getSpawnPosition());
         }
 
-        SetLocalPlayerAsInitializedPacket initializedPacket = new SetLocalPlayerAsInitializedPacket();
-        initializedPacket.setRuntimeEntityId(rewriteData.getEntityId());
-        this.connection.sendPacket(initializedPacket);
+        if (!this.player.isNetEaseClient()) {
+            // The proxy answers the client's spawn itself, which a NetEase client does not accept: the
+            // packet is serverbound, so it cannot be encoded for the client and the batch is lost.
+            // NetEase clients send their own SetLocalPlayerAsInitialized once the world is loaded.
+            SetLocalPlayerAsInitializedPacket initializedPacket = new SetLocalPlayerAsInitializedPacket();
+            initializedPacket.setRuntimeEntityId(rewriteData.getEntityId());
+            this.connection.sendPacket(initializedPacket);
+        }
 
         PostTransferCompleteEvent event = new PostTransferCompleteEvent(this.connection, this.player);
         this.player.getProxy().getEventManager().callEvent(event);

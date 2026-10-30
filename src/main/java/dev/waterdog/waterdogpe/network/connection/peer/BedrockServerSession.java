@@ -112,6 +112,10 @@ public class BedrockServerSession extends BedrockSession implements ProxiedConne
     public void setPacketHandler(BedrockPacketHandler handler) {
         if (handler instanceof ProxyPacketHandler packetHandler) {
             if (this.packetHandler instanceof ProxyBatchBridge bridge) {
+                // The negotiated codec changes after RequestNetworkSettings, so keep the reused
+                // bridge in sync; otherwise every game packet decodes as UnknownPacket.
+                bridge.setCodec(this.getPeer().getCodec());
+                bridge.setHelper(this.getPeer().getCodecHelper());
                 bridge.setHandler(packetHandler);
             } else {
                 super.setPacketHandler(new ProxyBatchBridge(this.getPeer().getCodec(),

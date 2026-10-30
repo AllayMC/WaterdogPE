@@ -16,7 +16,10 @@ import java.util.Queue;
 public class PacketQueueHandler extends ChannelDuplexHandler {
     public static final String NAME = "packet-queue-handler";
     private static final int MAX_BATCHES = 256;
-    private static final int MAX_PACKETS = 8000;
+    // NetEase/Allay downstream switching can send a large login burst while
+    // the upstream queue is paused. Keep the safety cap, but make it fit our
+    // room template instead of disconnecting players during normal transfers.
+    private static final int MAX_PACKETS = 50000;
 
     private final BedrockServerSession session;
 

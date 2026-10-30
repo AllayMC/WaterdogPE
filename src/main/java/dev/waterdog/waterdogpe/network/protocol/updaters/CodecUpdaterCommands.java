@@ -24,6 +24,8 @@ public class CodecUpdaterCommands implements ProtocolCodecUpdater {
     @Override
     public BedrockCodec.Builder updateCodec(BedrockCodec.Builder builder, BedrockCodec baseCodec) {
         BedrockPacketDefinition<AvailableCommandsPacket> definition = baseCodec.getPacketDefinition(AvailableCommandsPacket.class);
+        // The packet may still be registered when the codec keeps its full packet table.
+        builder.deregisterPacket(AvailableCommandsPacket.class);
         builder.registerPacket(AvailableCommandsPacket::new, definition.serializer(), definition.id(), definition.recipient());
         return builder;
     }
